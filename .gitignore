@@ -12,3 +12,7 @@ docs/
 
 # Dotenv file
 .env
+
+# IDEs
+.vscode/
+workspace.code-workspace
