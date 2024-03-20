@@ -39,6 +39,7 @@ Where possible, standard diagram semantics are used, but some are modified for b
 ```mermaid
 
 sequenceDiagram
+autonumber
     actor a as Anyone
     box transparent Trade Contracts
         participant c as Platform
@@ -105,7 +106,7 @@ sequenceDiagram
         b->>c: Cancel
         c-->>d: Deploy
         activate d
-        d-->>b: Return ETH (&PlusMinus; pre-paid ERC20s)
+        d-->>b: Return ETH (#PlusMinus; pre-paid ERC20s)
         deactivate d
     end
 
