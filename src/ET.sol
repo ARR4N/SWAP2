@@ -39,13 +39,14 @@ contract ETDeployer is IETHome {
     /**
      * @dev Deploys an ET contract, first transiently storing the Message to make it available via etMessage().
      * @param bytecode Creation bytecode of the contract to be deployed; aka init_code or creationCode.
+     * @param value Amount, in wei, to send during deployment.
      * @param salt CREATE2 salt.
      * @param message Message to be made available to the deployed contract if it calls etMessage() on this contract.
      * @return Address of the deployed contract.
      * @custom:reverts If deployment fails; propagates the return data from CREATE2, which will be empty if attempting
      * to re-deploy to the same address.
      */
-    function _deploy(bytes memory bytecode, bytes32 salt, Message message) internal returns (address) {
+    function _deploy(bytes memory bytecode, uint256 value, bytes32 salt, Message message) internal returns (address) {
         address predicted = _predictDeploymentAddress(bytecode, salt);
         address deployed;
 
@@ -53,7 +54,7 @@ contract ETDeployer is IETHome {
             // There is no need to explicitly clear this TSTORE (as solc recommends) because it is uniquely tied to the
             // deployed contract, which can never be reused.
             tstore(shr(96, shl(96, predicted)), message)
-            deployed := create2(callvalue(), add(bytecode, 0x20), mload(bytecode), salt)
+            deployed := create2(value, add(bytecode, 0x20), mload(bytecode), salt)
         }
         if (deployed != address(0)) {
             assert(deployed == predicted);

@@ -13,7 +13,7 @@ Message constant REVERT_MSG = Message.wrap(keccak256("revert"));
 contract TestableET is ET {
     error Reverted(address);
 
-    constructor() {
+    constructor() payable {
         Message m = _phoneHome();
         if (m == REVERT_MSG) {
             revert Reverted(address(this));
@@ -23,8 +23,8 @@ contract TestableET is ET {
 }
 
 contract TestableETDeployer is ETDeployer {
-    function deploy(bytes32 salt, Message message) external returns (address) {
-        return _deploy(type(TestableET).creationCode, salt, message);
+    function deploy(bytes32 salt, Message message) external payable returns (address) {
+        return _deploy(type(TestableET).creationCode, msg.value, salt, message);
     }
 
     function predict(bytes32 salt) external view returns (address) {
@@ -47,6 +47,19 @@ contract ETTest is Test {
         vm.label(et, "actual");
 
         assertEq(et, predicted);
+    }
+
+    function testValueSend(address caller, bytes32 salt, Message message, uint256 value) public {
+        vm.assume(message != REVERT_MSG);
+
+        address predicted = deployer.predict(salt);
+        vm.assume(predicted.balance == 0);
+
+        vm.deal(caller, value);
+        vm.prank(caller);
+        deployer.deploy{value: value}(salt, message);
+
+        assertEq(predicted.balance, value, "value propagated to deployed contract");
     }
 
     function testRecreateRevert(bytes32 salt, Message message, Message[5] memory otherMsgs) public {
