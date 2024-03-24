@@ -3,7 +3,7 @@
 pragma solidity ^0.8.20; // Requires PUSH0
 
 /**
- * @notice A library of modifiers, for use on constructors only, that govern the code deployed to the address after the
+ * @notice A set of modifiers, for use on constructors only, that govern the code deployed to the address after the
  * constructor returns.
  * @dev Single-use contracts that only perform meaningful actions in their constructors don't need to leave significant
  * bytecode in place. As SELFDESTRUCT is deprecated (EIP-6049), an alternative is to minimise the deployed footprint as
