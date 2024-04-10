@@ -8,7 +8,7 @@ import {SwapperTest, SwapperTestLib} from "./SwapperTest.t.sol";
 
 import {ERC721Token} from "../src/ERC721SwapperLib.sol";
 import {ERC721ForNativeSwap as Swap} from "../src/ERC721ForNative/ERC721ForNativeSwap.sol";
-import {InsufficientBalance} from "../src/TypesAndConstants.sol";
+import {InsufficientBalance, Filled, Cancelled} from "../src/TypesAndConstants.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
@@ -21,7 +21,7 @@ contract ERC721ForNativeTest is NativeTokenConsiderationTest {
         Payments payments;
     }
 
-    function _testFill(TestCase memory t, bytes memory err) internal returns (address) {
+    function _testFill(TestCase memory t, bytes memory err) internal {
         CommonTestCase memory test = t.common;
         uint256 tokenId = t.tokenId;
         Payments memory pay = t.payments;
@@ -33,7 +33,7 @@ contract ERC721ForNativeTest is NativeTokenConsiderationTest {
         vm.label(swapper, "swapper");
 
         {
-            vm.assume(swapper != test.seller() && swapper != test.buyer() && swapper != test.caller);
+            vm.assume(test.seller() != swapper && test.buyer() != swapper && test.caller != swapper);
 
             vm.assume(swapper.balance == 0);
             vm.deal(swapper, pay.prepaySwapper);
@@ -42,29 +42,38 @@ contract ERC721ForNativeTest is NativeTokenConsiderationTest {
 
         bool passes = err.length == 0;
 
-        if (!passes) {
-            vm.expectRevert(err);
+        {
+            if (passes) {
+                vm.expectEmit(true, true, true, true, address(token));
+                emit Transfer(test.seller(), test.buyer(), tokenId);
+                vm.expectEmit(true, true, true, true, swapper);
+                emit Filled();
+            } else {
+                vm.expectRevert(err);
+            }
+
+            vm.deal(test.caller, pay.callValue);
+            vm.prank(test.caller);
+            factory.fill{value: pay.callValue}(swap, test.salt);
         }
-        vm.deal(test.caller, pay.callValue);
-        vm.prank(test.caller);
-        vm.breakpoint("f");
-        factory.fill{value: pay.callValue}(swap, test.salt);
 
-        assertEq(token.ownerOf(tokenId), passes ? test.buyer() : test.seller(), "token owner");
+        {
+            assertEq(token.ownerOf(tokenId), passes ? test.buyer() : test.seller(), "token owner");
 
-        assertEq(
-            test.seller().balance,
-            passes ? uint256(pay.prepaySwapper) + uint256(pay.callValue) - test.totalForThirdParties() : 0,
-            "seller balance"
-        );
-        assertEq(test.caller.balance, passes ? 0 : pay.callValue, "caller balance");
-        assertEq(swapper.balance, passes ? 0 : pay.prepaySwapper, "swapper balance");
-        assertEq(address(factory).balance, 0, "factory balance remains zero");
+            assertEq(
+                test.seller().balance,
+                passes ? uint256(pay.prepaySwapper) + uint256(pay.callValue) - test.totalForThirdParties() : 0,
+                "seller balance"
+            );
+            assertEq(test.caller.balance, passes ? 0 : pay.callValue, "caller balance");
+            assertEq(swapper.balance, passes ? 0 : pay.prepaySwapper, "swapper balance");
+            assertEq(address(factory).balance, 0, "factory balance remains zero");
+        }
 
-        assertEq(swapper.code.length, passes ? 3 : 0, "deployed swapper bytecode length");
-        _testExtraDeposits(test, pay, swapper, !passes);
-
-        return swapper;
+        {
+            assertEq(swapper.code.length, passes ? 3 : 0, "deployed swapper bytecode length");
+            _testExtraDeposits(test, pay, swapper, !passes);
+        }
     }
 
     function testHappyPath(TestCase memory t)

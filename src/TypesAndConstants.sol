@@ -32,6 +32,11 @@ struct Consideration {
     uint256 total;
 }
 
+// TODO: move these into a common interface, inherited by *SwapperBase contracts.
+event Filled();
+
+event Cancelled();
+
 /// @dev Indicates that the user requested that the swap be performed.
 Message constant FILL = Message.wrap(bytes32(bytes4(keccak256("FILL"))));
 

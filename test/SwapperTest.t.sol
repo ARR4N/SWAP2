@@ -50,7 +50,13 @@ library SwapperTestLib {
     }
 }
 
-abstract contract SwapperTest is Test {
+interface IEvents {
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokeinId);
+    event Filled();
+    event Cancelled();
+}
+
+abstract contract SwapperTest is Test, IEvents {
     using SwapperTestLib for CommonTestCase;
 
     SWAP2 public factory;
@@ -60,7 +66,7 @@ abstract contract SwapperTest is Test {
         factory = new SWAP2();
         vm.label(address(factory), "SWAP2");
         token = new Token();
-        vm.label(address(token), "ERC721");
+        vm.label(address(token), "FakeERC721");
     }
 
     enum Approval {
@@ -92,7 +98,13 @@ abstract contract SwapperTest is Test {
 
         vm.label(t.seller(), "seller");
         vm.label(t.buyer(), "buyer");
-        vm.label(t.caller, "swap-executor");
+        if (t.caller == t.seller()) {
+            vm.label(t.caller, "seller (swap executor)");
+        } else if (t.caller == t.buyer()) {
+            vm.label(t.caller, "buyer (swap executor)");
+        } else {
+            vm.label(t.caller, "swap-executor");
+        }
 
         {
             Disbursement[] memory orig = t.consideration.thirdParty;
