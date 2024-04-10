@@ -6,14 +6,13 @@ import {ERC721ForNativeSwapperBase} from "./ERC721ForNativeSwapperBase.gen.sol";
 
 import {ERC721SwapperLib} from "../ERC721SwapperLib.sol";
 import {NativeTokenConsideration} from "../NativeTokenConsideration.sol";
-import {asNonPayableParties} from "../TypesAndConstants.sol";
 
 contract ERC721ForNativeSwapper is ERC721ForNativeSwapperBase, NativeTokenConsideration {
-    constructor(Swap memory swap) ERC721ForNativeSwapperBase(swap) {}
+    constructor(Swap memory swap) payable ERC721ForNativeSwapperBase(swap) {}
 
     function _fill(Swap memory swap) internal override {
         NativeTokenConsideration._beforeFill(swap.consideration);
-        ERC721SwapperLib._transfer(swap.token, asNonPayableParties(swap.parties));
+        ERC721SwapperLib._transfer(swap.token, _asNonPayableParties(swap.parties));
         NativeTokenConsideration._disburseFunds(swap.parties, swap.consideration);
     }
 

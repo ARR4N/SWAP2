@@ -1,6 +1,7 @@
 ## Terminology
 
 1. **Trade**: the act of exchanging one set of assets for another.
+   1. **Swap**: synonym for Trade.
 
 2. **Party**:
    1. **Buyer**: the participant in a Trade (optionally) providing ETH as consideration; or

@@ -22,12 +22,6 @@ struct PayableParties {
     address payable buyer;
 }
 
-function asNonPayableParties(PayableParties memory pay) pure returns (Parties memory nonPay) {
-    assembly ("memory-safe") {
-        nonPay := pay
-    }
-}
-
 struct Disbursement {
     address to;
     uint256 amount;

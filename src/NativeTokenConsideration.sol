@@ -2,7 +2,7 @@
 pragma solidity 0.8.25;
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {Consideration, Disbursement, PayableParties, InsufficientBalance} from "./TypesAndConstants.sol";
+import {Consideration, Disbursement, Parties, PayableParties, InsufficientBalance} from "./TypesAndConstants.sol";
 
 contract NativeTokenConsideration {
     using Address for address payable;
@@ -31,5 +31,11 @@ contract NativeTokenConsideration {
 
     function _postExecutionInvariantsMet() internal view returns (bool) {
         return address(this).balance == 0;
+    }
+
+    function _asNonPayableParties(PayableParties memory pay) internal pure returns (Parties memory nonPay) {
+        assembly ("memory-safe") {
+            nonPay := pay
+        }
     }
 }
