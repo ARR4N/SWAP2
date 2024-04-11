@@ -8,10 +8,10 @@ import {ERC721ForERC20Swap} from "./ERC721ForERC20Swap.sol";
 
 import {ConstructorArtifacts} from "../ConstructorArtifacts.sol";
 import {ET, Message} from "../ET.sol";
-import {UnsupportedAction, Disbursement, FILL, CANCEL} from "../TypesAndConstants.sol";
+import {UnsupportedAction, Disbursement, ISwapperEvents, FILL, CANCEL} from "../TypesAndConstants.sol";
 
 /// @dev Base contract for a ERC721ForERC20Swapper implementation.
-abstract contract ERC721ForERC20SwapperBase is ConstructorArtifacts, ET {
+abstract contract ERC721ForERC20SwapperBase is ConstructorArtifacts, ET, ISwapperEvents {
     constructor(ERC721ForERC20Swap memory swap) contractAlwaysRevertsEmpty {
         Message action = ET._phoneHome();
         if (action == FILL) {

@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 
 import {SWAP2} from "../src/SWAP2.sol";
-import {Parties, Consideration, Disbursement} from "../src/TypesAndConstants.sol";
+import {Parties, Consideration, Disbursement, ISwapperEvents} from "../src/TypesAndConstants.sol";
 
 import {ERC721, IERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
@@ -50,13 +50,11 @@ library SwapperTestLib {
     }
 }
 
-interface IEvents {
+interface ITestEvents is ISwapperEvents {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokeinId);
-    event Filled();
-    event Cancelled();
 }
 
-abstract contract SwapperTest is Test, IEvents {
+abstract contract SwapperTest is Test, ITestEvents {
     using SwapperTestLib for CommonTestCase;
 
     SWAP2 public factory;

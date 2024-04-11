@@ -6,7 +6,6 @@ import {ERC721ForNativeSwapperBase} from "./ERC721ForNativeSwapperBase.gen.sol";
 
 import {ERC721SwapperLib} from "../ERC721SwapperLib.sol";
 import {NativeTokenConsideration} from "../NativeTokenConsideration.sol";
-import {Filled, Cancelled} from "../TypesAndConstants.sol";
 
 contract ERC721ForNativeSwapper is ERC721ForNativeSwapperBase, NativeTokenConsideration {
     constructor(Swap memory swap) payable ERC721ForNativeSwapperBase(swap) {}

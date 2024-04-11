@@ -8,10 +8,10 @@ import {TMPLSwap} from "./TMPLSwap.sol";
 
 import {ConstructorArtifacts} from "../ConstructorArtifacts.sol";
 import {ET, Message} from "../ET.sol";
-import {UnsupportedAction, Disbursement, FILL, CANCEL} from "../TypesAndConstants.sol";
+import {UnsupportedAction, Disbursement, ISwapperEvents, FILL, CANCEL} from "../TypesAndConstants.sol";
 
 /// @dev Base contract for a TMPLSwapper implementation.
-abstract contract TMPLSwapperBase is ConstructorArtifacts, ET {
+abstract contract TMPLSwapperBase is ConstructorArtifacts, ET, ISwapperEvents {
     constructor(TMPLSwap memory swap) contractAlwaysRevertsEmpty {
         Message action = ET._phoneHome();
         if (action == FILL) {

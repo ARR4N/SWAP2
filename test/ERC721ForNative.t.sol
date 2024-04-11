@@ -8,7 +8,7 @@ import {SwapperTest, SwapperTestLib} from "./SwapperTest.t.sol";
 
 import {ERC721Token} from "../src/ERC721SwapperLib.sol";
 import {ERC721ForNativeSwap as Swap} from "../src/ERC721ForNative/ERC721ForNativeSwap.sol";
-import {InsufficientBalance, Filled, Cancelled} from "../src/TypesAndConstants.sol";
+import {InsufficientBalance, Disbursement} from "../src/TypesAndConstants.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
