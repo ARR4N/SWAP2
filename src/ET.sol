@@ -51,6 +51,8 @@ contract ETPredictor {
  */
 contract ETDeployer is IETHome, ETPredictor {
     error PredictedAddressMismatch(address deployed, address predicted);
+    /// @dev Thrown when create2() fails with returndatasize()==0, for precise error-path testing with expectRevert().
+    error Create2EmptyRevert();
 
     /**
      * @dev Deploys an ET contract, first transiently storing the Message to make it available via etMessage().
@@ -78,6 +80,12 @@ contract ETDeployer is IETHome, ETPredictor {
         if (deployed == address(0)) {
             assembly ("memory-safe") {
                 let free := mload(0x40)
+
+                if iszero(returndatasize()) {
+                    mstore(free, 0x33d2bae4) // Create2EmptyRevert()
+                    revert(add(free, 28), 4)
+                }
+
                 returndatacopy(free, 0, returndatasize())
                 revert(free, returndatasize())
             }

@@ -14,14 +14,10 @@ contract ERC721ForNativeSwapper is ERC721ForNativeSwapperBase, NativeTokenConsid
         NativeTokenConsideration._beforeFill(swap.consideration);
         ERC721SwapperLib._transfer(swap.token, _asNonPayableParties(swap.parties));
         NativeTokenConsideration._disburseFunds(swap.parties, swap.consideration);
-
-        emit Filled();
     }
 
     function _cancel(Swap memory swap) internal override {
         NativeTokenConsideration._cancel(swap.parties);
-
-        emit Cancelled();
     }
 
     function _postExecutionInvariantsMet(Swap memory) internal view override returns (bool) {

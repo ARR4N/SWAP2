@@ -8,7 +8,7 @@ import {ERC721ForNativeSwap} from "./ERC721ForNativeSwap.sol";
 import {ERC721ForNativeSwapper} from "./ERC721ForNativeSwapper.sol";
 
 import {ETDeployer, ETPredictor} from "../ET.sol";
-import {OnlyBuyerCanCancel, FILL, CANCEL} from "../TypesAndConstants.sol";
+import {ISwapperEvents, OnlyBuyerCanCancel, FILL, CANCEL} from "../TypesAndConstants.sol";
 
 /// @dev Predictor of ERC721ForNativeSwapper contract addresses.
 contract ERC721ForNativeSwapperPredictor is ETPredictor {
@@ -22,16 +22,20 @@ contract ERC721ForNativeSwapperPredictor is ETPredictor {
 }
 
 /// @dev Deployer of ERC721ForNativeSwapper contracts.
-contract ERC721ForNativeSwapperDeployer is ERC721ForNativeSwapperPredictor, ETDeployer {
+contract ERC721ForNativeSwapperDeployer is ERC721ForNativeSwapperPredictor, ETDeployer, ISwapperEvents {
     function fill(ERC721ForNativeSwap memory swap, bytes32 salt) external payable returns (address) {
-        return _deploy(_swapper(swap, salt), _bytecode(swap), msg.value, salt, FILL);
+        address a = _deploy(_swapper(swap, salt), _bytecode(swap), msg.value, salt, FILL);
+        emit Filled(a);
+        return a;
     }
 
     function cancel(ERC721ForNativeSwap memory swap, bytes32 salt) external returns (address) {
         if (msg.sender != swap.parties.buyer) {
             revert OnlyBuyerCanCancel();
         }
-        return _deploy(_swapper(swap, salt), _bytecode(swap), 0, salt, CANCEL);
+        address a = _deploy(_swapper(swap, salt), _bytecode(swap), 0, salt, CANCEL);
+        emit Cancelled(a);
+        return a;
     }
 
     function swapper(ERC721ForNativeSwap memory swap, bytes32 salt) external view returns (address payable) {

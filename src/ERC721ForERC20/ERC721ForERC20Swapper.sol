@@ -13,12 +13,10 @@ contract ERC721ForERC20Swapper is ERC721ForERC20SwapperBase, ERC20Consideration 
     function _fill(Swap memory swap) internal override {
         ERC721SwapperLib._transfer(swap.token, swap.parties);
         ERC20Consideration._disburseFunds(swap.parties, swap.consideration, swap.currency);
-
-        emit Filled();
     }
 
     function _cancel(Swap memory) internal override {
-        emit Cancelled();
+        // No actions required.
     }
 
     function _postExecutionInvariantsMet(Swap memory) internal pure override returns (bool) {

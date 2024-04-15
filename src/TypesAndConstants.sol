@@ -33,8 +33,8 @@ struct Consideration {
 }
 
 interface ISwapperEvents {
-    event Filled();
-    event Cancelled();
+    event Filled(address swapper);
+    event Cancelled(address swapper);
 }
 
 /// @dev Indicates that the user requested that the swap be performed.

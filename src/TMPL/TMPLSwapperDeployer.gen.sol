@@ -8,7 +8,7 @@ import {TMPLSwap} from "./TMPLSwap.sol";
 import {TMPLSwapper} from "./TMPLSwapper.sol";
 
 import {ETDeployer, ETPredictor} from "../ET.sol";
-import {OnlyBuyerCanCancel, FILL, CANCEL} from "../TypesAndConstants.sol";
+import {ISwapperEvents, OnlyBuyerCanCancel, FILL, CANCEL} from "../TypesAndConstants.sol";
 
 /// @dev Predictor of TMPLSwapper contract addresses.
 contract TMPLSwapperPredictor is ETPredictor {
@@ -22,16 +22,20 @@ contract TMPLSwapperPredictor is ETPredictor {
 }
 
 /// @dev Deployer of TMPLSwapper contracts.
-contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer {
+contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, ISwapperEvents {
     function fill(TMPLSwap memory swap, bytes32 salt) external payable returns (address) {
-        return _deploy(_swapper(swap, salt), _bytecode(swap), msg.value, salt, FILL);
+        address a = _deploy(_swapper(swap, salt), _bytecode(swap), msg.value, salt, FILL);
+        emit Filled(a);
+        return a;
     }
 
     function cancel(TMPLSwap memory swap, bytes32 salt) external returns (address) {
         if (msg.sender != swap.parties.buyer) {
             revert OnlyBuyerCanCancel();
         }
-        return _deploy(_swapper(swap, salt), _bytecode(swap), 0, salt, CANCEL);
+        address a = _deploy(_swapper(swap, salt), _bytecode(swap), 0, salt, CANCEL);
+        emit Cancelled(a);
+        return a;
     }
 
     function swapper(TMPLSwap memory swap, bytes32 salt) external view returns (address payable) {
