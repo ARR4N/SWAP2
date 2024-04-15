@@ -13,10 +13,16 @@ tasks:
 
   generateImports:
     cmds:
-      - for: ['ERC721ForNative', 'ERC721ForERC20', 'TMPL', 'Experimental']
+      - for: ['ERC721ForNative', 'ERC721ForERC20', 'TMPL']
         task: _generateImports
         vars:
           TYPE: '{{.ITEM}}'
+
+  generateImportsForExperimental:
+    cmds:
+      - task: _generateImports
+        vars:
+          TYPE: 'Experimental'
 
   generateSwapStructBoilerplate:
     dir: "./src/"
