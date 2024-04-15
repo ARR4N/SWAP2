@@ -124,7 +124,7 @@ abstract contract ERC721ForXTest is SwapperTest {
         token.transferFrom(test.buyer(), test.seller(), t.tokenId);
         vm.stopPrank();
 
-        vm.expectRevert(abi.encodeWithSelector(ETDeployer.Create2EmptyRevert.selector));
+        vm.expectRevert(ETDeployer.Create2EmptyRevert.selector);
         _replay(t, replayer);
         assertEq(token.ownerOf(t.tokenId), test.seller());
     }
