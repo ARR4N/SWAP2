@@ -24,7 +24,7 @@ contract TMPLSwapperPredictor is ETPredictor {
 /// @dev Deployer of TMPLSwapper contracts.
 contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, ISwapperEvents {
     function fill(TMPLSwap memory swap, bytes32 salt) external payable returns (address) {
-        address a = _deploy(_swapper(swap, salt), _bytecode(swap), msg.value, salt, FILL);
+        address a = _deploy(_bytecode(swap), msg.value, salt, FILL);
         emit Filled(a);
         return a;
     }
@@ -33,7 +33,7 @@ contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, ISwapperEvents
         if (msg.sender != swap.parties.buyer) {
             revert OnlyBuyerCanCancel();
         }
-        address a = _deploy(_swapper(swap, salt), _bytecode(swap), 0, salt, CANCEL);
+        address a = _deploy(_bytecode(swap), 0, salt, CANCEL);
         emit Cancelled(a);
         return a;
     }
