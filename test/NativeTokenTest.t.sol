@@ -16,37 +16,37 @@ abstract contract NativeTokenTest is SwapperTest {
     }
 
     function _beforeExecute(TestCase memory t, address swapper) internal override {
-        _deal(swapper, t.native.pre);
-        _deal(t.caller, t.native.call);
+        _deal(swapper, t.native.prePay);
+        _deal(t.caller, t.native.callValue);
     }
 
     function _afterExecute(TestCase memory t, address swapper, bool executed) internal override {
-        vm.deal(t.buyer(), t.native.post);
+        vm.deal(t.buyer(), t.native.postPay);
         vm.prank(t.buyer());
-        (bool success,) = swapper.call{value: t.native.post}("");
+        (bool success,) = swapper.call{value: t.native.postPay}("");
         assertEq(success, !executed, "funds can only be sent to the swapper before execution");
     }
 
     function _expectedSellerBalanceAfterFill(TestCase memory t) internal pure override returns (uint256) {
         NativePayments memory pay = t.native;
-        return uint256(pay.pre) + uint256(pay.call) - t.totalForThirdParties();
+        return uint256(pay.prePay) + uint256(pay.callValue) - t.totalForThirdParties();
     }
 
     function _swapperPrePay(TestCase memory t) internal pure override returns (uint256) {
-        return t.native.pre;
+        return t.native.prePay;
     }
 
     function _paymentsValid(TestCase memory t) internal pure override returns (bool) {
         // The seller only executes the transaction if all funds are pre-paid.
-        return t.caller != t.seller() || t.native.call == 0;
+        return t.caller != t.seller() || t.native.callValue == 0;
     }
 
     function _totalPaying(TestCase memory t) internal pure override returns (uint256) {
-        return uint256(t.native.pre) + uint256(t.native.call);
+        return uint256(t.native.prePay) + uint256(t.native.callValue);
     }
 
     function _insufficientBalanceError(TestCase memory t) internal pure override returns (bytes memory) {
-          return  abi.encodeWithSelector(InsufficientBalance.selector, _totalPaying(t), t.total());
+        return abi.encodeWithSelector(InsufficientBalance.selector, _totalPaying(t), t.total());
     }
 
     function _asPayableParties(Parties memory nonPay) internal pure returns (PayableParties memory pay) {

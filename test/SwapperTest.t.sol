@@ -42,9 +42,9 @@ abstract contract SwapperTest is Test, ITestEvents {
     }
 
     struct NativePayments {
-        uint128 pre;
-        uint128 call;
-        uint128 post;
+        uint128 prePay;
+        uint128 callValue;
+        uint128 postPay;
     }
 
     struct ERC20Payments {
@@ -95,7 +95,7 @@ abstract contract SwapperTest is Test, ITestEvents {
         return _totalPaying(t) >= t.total();
     }
 
-    function _insufficientBalanceError(TestCase memory) internal virtual view returns (bytes memory);
+    function _insufficientBalanceError(TestCase memory) internal view virtual returns (bytes memory);
 
     modifier assumeSufficientPayment(TestCase memory t) {
         vm.assume(_sufficientPayment(t));

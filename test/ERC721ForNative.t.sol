@@ -21,7 +21,7 @@ contract ERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
     }
 
     function _fill(ERC721TestCase memory t) internal override {
-        _fill(t, t.common.native.call);
+        _fill(t, t.common.native.callValue);
     }
 
     function _fill(ERC721TestCase memory t, uint256 callValue) internal {

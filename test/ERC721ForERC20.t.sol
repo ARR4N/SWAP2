@@ -16,7 +16,7 @@ import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.s
 contract ERC721ForERC20Test is ERC721ForXTest, ERC20Test {
     using SwapperTestLib for TestCase;
 
-    function setUp() public override (SwapperTest, ERC20Test)  {
+    function setUp() public override(SwapperTest, ERC20Test) {
         SwapperTest.setUp();
         ERC20Test.setUp();
     }

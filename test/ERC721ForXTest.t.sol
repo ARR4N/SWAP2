@@ -182,7 +182,7 @@ abstract contract ERC721ForXTest is SwapperTest {
                     _approval: uint8(Approval.Approve),
                     caller: makeAddr("buyer"),
                     salt: 0,
-                    native: NativePayments({pre: 0, call: total, post: 0}),
+                    native: NativePayments({prePay: 0, callValue: total, postPay: 0}),
                     erc20: ERC20Payments({buyerBalance: total, swapperAllowance: total})
                 }),
                 tokenId: 0

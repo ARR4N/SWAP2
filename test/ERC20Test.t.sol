@@ -49,7 +49,7 @@ abstract contract ERC20Test is SwapperTest {
         currency.approve(swapper, t.erc20.swapperAllowance);
     }
 
-    function _afterExecute(TestCase memory t, address swapper, bool executed) internal override {    }
+    function _afterExecute(TestCase memory t, address swapper, bool executed) internal override {}
 
     function _expectedSellerBalanceAfterFill(TestCase memory t) internal pure override returns (uint256) {
         return t.totalForSeller();
@@ -68,10 +68,10 @@ abstract contract ERC20Test is SwapperTest {
     }
 
     function _insufficientBalanceError(TestCase memory t) internal pure override returns (bytes memory) {
-       return  abi.encodeWithSelector(Currency.InsufficientBalance.selector, t.buyer());
+        return abi.encodeWithSelector(Currency.InsufficientBalance.selector, t.buyer());
     }
 
-    function _min(uint a, uint b) internal pure returns (uint) {
+    function _min(uint256 a, uint256 b) internal pure returns (uint256) {
         return a < b ? a : b;
     }
 }
