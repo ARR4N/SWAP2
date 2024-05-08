@@ -239,29 +239,47 @@ abstract contract SwapperTestBase is Test, ITestEvents {
     }
 }
 
+/**
+ * @dev Library of getters for reading SwapperTestBase.TestCase struct fields that aren't directly accessible (i.e. are
+ * underscore-prefixed) or require syntactic sugar for convenience.
+ */
 library SwapperTestLib {
     using SwapperTestLib for SwapperTestBase.TestCase;
 
+    /// @dev Returns `t._approval` as an `Approval` enum.
     function approval(SwapperTestBase.TestCase memory t) internal pure returns (SwapperTestBase.Approval) {
         return SwapperTestBase.Approval(t._approval % uint8(type(SwapperTestBase.Approval).max));
     }
 
+    /// @dev Returns the `seller` address.
     function seller(SwapperTestBase.TestCase memory t) internal pure returns (address) {
         return t.parties.seller;
     }
 
+    /// @dev Returns the `buyer` address.
     function buyer(SwapperTestBase.TestCase memory t) internal pure returns (address) {
         return t.parties.buyer;
     }
 
+    /**
+     * @dev Returns the test case's `Consideration` struct.
+     * @dev If only the total is required, use total() instead.
+     */
+    function consideration(SwapperTestBase.TestCase memory t) internal pure returns (Consideration memory) {
+        uint256 n = t._numThirdParty;
+        Consideration memory c = Consideration({thirdParty: new Disbursement[](n), total: t._totalConsideration});
+        for (uint256 i = 0; i < n; ++i) {
+            c.thirdParty[i] = t._thirdParty[i];
+        }
+        return c;
+    }
+
+    /// @dev Returns total consideration, mirroring the value in the struct returned by consideration().
     function total(SwapperTestBase.TestCase memory t) internal pure returns (uint256) {
         return t._totalConsideration;
     }
 
-    function totalForSeller(SwapperTestBase.TestCase memory t) internal pure returns (uint256) {
-        return t.total() - t.totalForThirdParties();
-    }
-
+    /// @dev Returns the sum of all third-party disbursements.
     function totalForThirdParties(SwapperTestBase.TestCase memory t) internal pure returns (uint256) {
         Consideration memory c = t.consideration();
         uint256 sum;
@@ -271,12 +289,8 @@ library SwapperTestLib {
         return sum;
     }
 
-    function consideration(SwapperTestBase.TestCase memory t) internal pure returns (Consideration memory) {
-        uint256 n = t._numThirdParty;
-        Consideration memory c = Consideration({thirdParty: new Disbursement[](n), total: t._totalConsideration});
-        for (uint256 i = 0; i < n; ++i) {
-            c.thirdParty[i] = t._thirdParty[i];
-        }
-        return c;
+    /// @dev Returns the total consideration remaining for the seller after deducting all third-party disbursements.
+    function totalForSeller(SwapperTestBase.TestCase memory t) internal pure returns (uint256) {
+        return t.total() - t.totalForThirdParties();
     }
 }
