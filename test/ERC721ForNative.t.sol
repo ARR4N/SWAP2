@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 import {ERC721ForXTest} from "./ERC721ForXTest.t.sol";
-import {SwapperTestLib} from "./SwapperTest.t.sol";
+import {SwapperTestLib} from "./SwapperTestBase.t.sol";
 import {NativeTokenTest} from "./NativeTokenTest.t.sol";
 
 import {ERC721Token} from "../src/ERC721SwapperLib.sol";

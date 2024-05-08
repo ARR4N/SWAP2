@@ -22,7 +22,15 @@ interface ITestEvents is ISwapperEvents {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokeinId);
 }
 
-abstract contract SwapperTest is Test, ITestEvents {
+/**
+ * @dev SwapperTestBase is the abstract base of all other tests. It defines:
+ *   - A common TestCase struct, useful for fuzzing.
+ *   - A set of (virtual) functions that non-abstract test contracts can expect to be present; these are mostly
+ *     implemented by NativeTokenTest and ERC20Test.
+ *   - Modifiers for test*() functions, implementing common assumptions.
+ * @dev Notably, SwapperTestBase doesn't implement any actual tests.
+ */
+abstract contract SwapperTestBase is Test, ITestEvents {
     using SwapperTestLib for TestCase;
 
     SWAP2 public factory;
@@ -35,23 +43,30 @@ abstract contract SwapperTest is Test, ITestEvents {
         vm.label(address(token), "FakeERC721");
     }
 
+    /// @dev Whether to use approve(), setApprovalForAll(), or no approval on ERC721 tokens.
     enum Approval {
         None,
         Approve,
         ApproveForAll
     }
 
+    /// @dev Payment parameters when using native-token consideration.
     struct NativePayments {
-        uint128 prePay;
-        uint128 callValue;
-        uint128 postPay;
+        uint128 prePay; // Sent beforehand to the predicted swapper address.
+        uint128 callValue; // Value sent during the call to fill().
+        uint128 postPay; // Sent to the swapper address after execution and MUST be rejected if execution succeeded.
     }
 
+    /// @dev Payment parameters when using ERC20 consideration.
     struct ERC20Payments {
         uint256 buyerBalance;
         uint256 swapperAllowance;
     }
 
+    /**
+     * @dev A set of fuzzable parameters, common to all tests.
+     * @dev Underscore-prefixed fields MUST NOT be accessed directly; use SwapperTestLib functions instead.
+     */
     struct TestCase {
         // Swap particulars
         Parties parties;
@@ -61,66 +76,90 @@ abstract contract SwapperTest is Test, ITestEvents {
         Disbursement[5] _thirdParty;
         uint256 _totalConsideration;
         // Pre-execution config
-        uint8 _approval; // use SwapperTestLib.approval() to access
+        uint8 _approval; // use SwapperTestLib.approval() to access as an Approval enum.
         // Tx execution
         address caller;
         bytes32 salt;
-        // NativePayments; only one will be necessary for the specific test.
+        // Payments; only one will be necessary for the specific test.
         NativePayments native;
         ERC20Payments erc20;
     }
 
+    /// @dev Returns the balance of the address, denominated in the payment currency (native or specific ERC20).
     function _balance(address) internal view virtual returns (uint256);
 
-    function _deal(address, uint256 newBalance) internal virtual;
+    /// @dev Sets the account's balance, similarly to vm.deal(), which SHOULD be used when appropriate.
+    function _deal(address account, uint256 newBalance) internal virtual;
 
+    /// @dev Called before a call to fill() or cancel().
     function _beforeExecute(TestCase memory, address swapper) internal virtual;
 
+    /// @dev Called after a call to fill() or cancel(). MUST be tagged with inVMSnapshot modifier if modifiying state.
     function _afterExecute(TestCase memory, address swapper, bool executed) internal virtual;
 
+    /**
+     * @dev Returns the total consideration the seller is expected to receive after a successful call to fill().
+     * @dev Although in production this will be `Consideration.total` minus the sum of third-party disbursements, in
+     * fuzzed tests for native-token consideration the pre-payment + call-value may exceed this value.
+     */
     function _expectedSellerBalanceAfterFill(TestCase memory) internal view virtual returns (uint256);
 
+    /// @dev Returns the amount to pre-pay the predicted swapper address. Only valid for native-token consideration.
     function _swapperPrePay(TestCase memory) internal view virtual returns (uint256);
 
+    /// @dev Returns whether the NativePayments or ERC20Payments struct (as appropriate) is valid.
     function _paymentsValid(TestCase memory) internal view virtual returns (bool);
 
-    modifier assumeValidPayments(TestCase memory t) {
+    /// @dev Calls vm.assume() with the return value of _paymentsValid().
+    modifier assumePaymentsValid(TestCase memory t) {
         vm.assume(_paymentsValid(t));
         _;
     }
 
+    /// TODO This name doesn't reflect reality for ERC20 consideration.
     function _totalPaying(TestCase memory) internal view virtual returns (uint256);
 
+    /// @dev Returns whether sufficient payment is being issued to cover the total consideration.
     function _sufficientPayment(TestCase memory t) internal view returns (bool) {
         return _totalPaying(t) >= t.total();
     }
 
-    function _insufficientBalanceError(TestCase memory) internal view virtual returns (bytes memory);
-
+    /// @dev Calls vm.assume() with the return value of _sufficientPayment().
     modifier assumeSufficientPayment(TestCase memory t) {
         vm.assume(_sufficientPayment(t));
         _;
     }
 
+    /// @dev Calls vm.assume() with the negation of the return value of _sufficientPayment().
     modifier assumeInsufficientPayment(TestCase memory t) {
         vm.assume(!_sufficientPayment(t));
         _;
     }
 
-    modifier assumeValidTest(TestCase memory t) {
-        vm.assume(t.seller() != t.buyer());
-        _assumeNonContractWithoutBalance(t.seller());
-        _assumeNonContractWithoutBalance(t.buyer());
-        _assumeNonContractWithoutBalance(t.caller);
+    /// @dev Returns the expected error when insufficient payment is being issued to cover the total consideration.
+    function _insufficientBalanceError(TestCase memory) internal view virtual returns (bytes memory);
 
-        vm.label(t.seller(), "seller");
-        vm.label(t.buyer(), "buyer");
-        if (t.caller == t.seller()) {
-            vm.label(t.caller, "seller (swap executor)");
-        } else if (t.caller == t.buyer()) {
-            vm.label(t.caller, "buyer (swap executor)");
-        } else {
-            vm.label(t.caller, "swap-executor");
+    /**
+     * @dev Confirms a series of assumptions about the TestCase that make it valid (i.e. plausible).
+     * @dev Additionally prunes third-party disbursements such that (a) they don't exceed total consideration, and (b)
+     * the recipients are distinct.
+     */
+    modifier assumeValidTest(TestCase memory t) {
+        {
+            vm.assume(t.seller() != t.buyer());
+            _assumeNonContractWithoutBalance(t.seller());
+            _assumeNonContractWithoutBalance(t.buyer());
+            _assumeNonContractWithoutBalance(t.caller);
+
+            vm.label(t.seller(), "seller");
+            vm.label(t.buyer(), "buyer");
+            if (t.caller == t.seller()) {
+                vm.label(t.caller, "seller (swap executor)");
+            } else if (t.caller == t.buyer()) {
+                vm.label(t.caller, "buyer (swap executor)");
+            } else {
+                vm.label(t.caller, "swap-executor");
+            }
         }
 
         {
@@ -163,23 +202,23 @@ abstract contract SwapperTest is Test, ITestEvents {
         }
     }
 
+    /// @dev Assumes that the address is not a contract (nor pre-compile) and has zero balance.
     function _assumeNonContractWithoutBalance(address a) internal view {
         vm.assume(uint160(a) > 0x0a);
         vm.assume(a.code.length == 0);
         vm.assume(a.balance == 0);
     }
 
+    /// @dev Assumes that either approve() or setApprovalForAll() will be called by _approveSwapper().
     modifier assumeApproving(TestCase memory t) {
         vm.assume(t.approval() != Approval.None);
         _;
     }
 
-    modifier inVMSnapshot() {
-        uint256 snap = vm.snapshot();
-        _;
-        vm.revertTo(snap);
-    }
-
+    /**
+     * @dev Calls the respective approval function, as dictated by t.approval(), with the `swapper` as the operator.
+     * @dev If t.approval() returns `Approval.None` then _approveSwapper() is a no-op.
+     */
     function _approveSwapper(TestCase memory t, uint256 tokenId, address swapper) internal {
         Approval a = t.approval();
 
@@ -191,32 +230,39 @@ abstract contract SwapperTest is Test, ITestEvents {
         }
         vm.stopPrank();
     }
+
+    /// @dev Runs the function in a vm.snapshot(), reverting at the end.
+    modifier inVMSnapshot() {
+        uint256 snap = vm.snapshot();
+        _;
+        vm.revertTo(snap);
+    }
 }
 
 library SwapperTestLib {
-    using SwapperTestLib for SwapperTest.TestCase;
+    using SwapperTestLib for SwapperTestBase.TestCase;
 
-    function approval(SwapperTest.TestCase memory t) internal pure returns (SwapperTest.Approval) {
-        return SwapperTest.Approval(t._approval % uint8(type(SwapperTest.Approval).max));
+    function approval(SwapperTestBase.TestCase memory t) internal pure returns (SwapperTestBase.Approval) {
+        return SwapperTestBase.Approval(t._approval % uint8(type(SwapperTestBase.Approval).max));
     }
 
-    function seller(SwapperTest.TestCase memory t) internal pure returns (address) {
+    function seller(SwapperTestBase.TestCase memory t) internal pure returns (address) {
         return t.parties.seller;
     }
 
-    function buyer(SwapperTest.TestCase memory t) internal pure returns (address) {
+    function buyer(SwapperTestBase.TestCase memory t) internal pure returns (address) {
         return t.parties.buyer;
     }
 
-    function total(SwapperTest.TestCase memory t) internal pure returns (uint256) {
+    function total(SwapperTestBase.TestCase memory t) internal pure returns (uint256) {
         return t._totalConsideration;
     }
 
-    function totalForSeller(SwapperTest.TestCase memory t) internal pure returns (uint256) {
+    function totalForSeller(SwapperTestBase.TestCase memory t) internal pure returns (uint256) {
         return t.total() - t.totalForThirdParties();
     }
 
-    function totalForThirdParties(SwapperTest.TestCase memory t) internal pure returns (uint256) {
+    function totalForThirdParties(SwapperTestBase.TestCase memory t) internal pure returns (uint256) {
         Consideration memory c = t.consideration();
         uint256 sum;
         for (uint256 i = 0; i < c.thirdParty.length; ++i) {
@@ -225,7 +271,7 @@ library SwapperTestLib {
         return sum;
     }
 
-    function consideration(SwapperTest.TestCase memory t) internal pure returns (Consideration memory) {
+    function consideration(SwapperTestBase.TestCase memory t) internal pure returns (Consideration memory) {
         uint256 n = t._numThirdParty;
         Consideration memory c = Consideration({thirdParty: new Disbursement[](n), total: t._totalConsideration});
         for (uint256 i = 0; i < n; ++i) {

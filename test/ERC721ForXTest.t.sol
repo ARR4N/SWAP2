@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
-import {SwapperTest, SwapperTestLib} from "./SwapperTest.t.sol";
+import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 
 import {ERC721Token} from "../src/ERC721SwapperLib.sol";
 import {OnlyBuyerCanCancel, Disbursement, Parties} from "../src/TypesAndConstants.sol";
@@ -11,7 +11,7 @@ import {ETDeployer} from "../src/ET.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
-abstract contract ERC721ForXTest is SwapperTest {
+abstract contract ERC721ForXTest is SwapperTestBase {
     using SwapperTestLib for TestCase;
 
     struct ERC721TestCase {
@@ -79,7 +79,7 @@ abstract contract ERC721ForXTest is SwapperTest {
     function testHappyPath(ERC721TestCase memory t)
         public
         assumeValidTest(t.common)
-        assumeValidPayments(t.common)
+        assumePaymentsValid(t.common)
         assumeSufficientPayment(t.common)
         assumeApproving(t.common)
     {
@@ -89,7 +89,7 @@ abstract contract ERC721ForXTest is SwapperTest {
     function testNotApproved(ERC721TestCase memory t)
         public
         assumeValidTest(t.common)
-        assumeValidPayments(t.common)
+        assumePaymentsValid(t.common)
         assumeSufficientPayment(t.common)
     {
         vm.assume(t.common.approval() == Approval.None);
@@ -102,7 +102,7 @@ abstract contract ERC721ForXTest is SwapperTest {
     function testInsufficientBalance(ERC721TestCase memory t)
         public
         assumeValidTest(t.common)
-        assumeValidPayments(t.common)
+        assumePaymentsValid(t.common)
         assumeApproving(t.common)
         assumeInsufficientPayment(t.common)
     {
@@ -112,7 +112,7 @@ abstract contract ERC721ForXTest is SwapperTest {
     function testReplayProtection(ERC721TestCase memory t, address replayer)
         public
         assumeValidTest(t.common)
-        assumeValidPayments(t.common)
+        assumePaymentsValid(t.common)
         assumeSufficientPayment(t.common)
         assumeApproving(t.common)
     {
@@ -141,6 +141,7 @@ abstract contract ERC721ForXTest is SwapperTest {
         {
             vm.expectRevert(abi.encodeWithSelector(OnlyBuyerCanCancel.selector));
             _cancelAs(t, vandal);
+            _afterExecute(test, swapper, false);
         }
 
         {
@@ -152,11 +153,14 @@ abstract contract ERC721ForXTest is SwapperTest {
 
             assertEq(_balance(swapper), 0, "swapper balance zero after cancel");
             assertEq(_balance(test.buyer()), expectedBuyerBalance, "buyer balance after cancel");
+
+            _afterExecute(test, swapper, true);
         }
 
         {
             vm.expectRevert(abi.encodeWithSelector(ETDeployer.Create2EmptyRevert.selector));
             _replay(t, vandal);
+            _afterExecute(test, swapper, true);
         }
 
         assertEq(token.ownerOf(t.tokenId), test.seller());

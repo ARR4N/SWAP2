@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 import {ERC721ForXTest} from "./ERC721ForXTest.t.sol";
-import {SwapperTest, SwapperTestLib} from "./SwapperTest.t.sol";
+import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 import {ERC20Test} from "./ERC20Test.t.sol";
 
 import {ERC721Token} from "../src/ERC721SwapperLib.sol";
@@ -16,8 +16,8 @@ import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.s
 contract ERC721ForERC20Test is ERC721ForXTest, ERC20Test {
     using SwapperTestLib for TestCase;
 
-    function setUp() public override(SwapperTest, ERC20Test) {
-        SwapperTest.setUp();
+    function setUp() public override(SwapperTestBase, ERC20Test) {
+        SwapperTestBase.setUp();
         ERC20Test.setUp();
     }
 

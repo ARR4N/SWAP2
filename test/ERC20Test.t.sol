@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-import {SwapperTest, SwapperTestLib} from "./SwapperTest.t.sol";
+import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 import {Consideration, Parties, PayableParties} from "../src/TypesAndConstants.sol";
 
 import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -25,7 +25,7 @@ contract Currency is ERC20 {
     }
 }
 
-abstract contract ERC20Test is SwapperTest {
+abstract contract ERC20Test is SwapperTestBase {
     using SwapperTestLib for TestCase;
 
     Currency public currency;

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-import {SwapperTest, SwapperTestLib} from "./SwapperTest.t.sol";
+import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 import {InsufficientBalance, Consideration, Parties, PayableParties} from "../src/TypesAndConstants.sol";
 
-abstract contract NativeTokenTest is SwapperTest {
+abstract contract NativeTokenTest is SwapperTestBase {
     using SwapperTestLib for TestCase;
 
     function _balance(address a) internal view override returns (uint256) {
@@ -20,7 +20,7 @@ abstract contract NativeTokenTest is SwapperTest {
         _deal(t.caller, t.native.callValue);
     }
 
-    function _afterExecute(TestCase memory t, address swapper, bool executed) internal override {
+    function _afterExecute(TestCase memory t, address swapper, bool executed) internal override inVMSnapshot {
         vm.deal(t.buyer(), t.native.postPay);
         vm.prank(t.buyer());
         (bool success,) = swapper.call{value: t.native.postPay}("");
