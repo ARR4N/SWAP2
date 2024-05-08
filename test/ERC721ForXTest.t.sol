@@ -11,44 +11,43 @@ import {ETDeployer} from "../src/ET.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
+/**
+ * @notice Implements concrete tests of swapping a single ERC721, agnostic to type of payment.
+ * @dev Inherit from both this contract and either NativeTokenTest or ERC20Test for a complete, non-abstract test
+ * contract.
+ */
 abstract contract ERC721ForXTest is SwapperTestBase {
     using SwapperTestLib for TestCase;
 
+    /// @dev Couples a base test case with a single ERC721 token ID for swapping.
     struct ERC721TestCase {
-        TestCase common;
+        SwapperTestBase.TestCase base;
         uint256 tokenId;
     }
 
+    /// @dev Returns the predicted address of a swapper for executing the swap defined by the test case.
     function _swapper(ERC721TestCase memory) internal view virtual returns (address);
 
+    /// @dev Fills the swap defined by the test case.
     function _fill(ERC721TestCase memory) internal virtual;
 
+    /// @dev Cancels the swap defined by the test case.
     function _cancel(ERC721TestCase memory) internal virtual;
 
+    /// @dev Attempts to fill the swap again, first performing all necessary deal()ing, then executing as `replayer`.
     function _replay(ERC721TestCase memory, address replayer) internal virtual;
 
-    function _beforeExecute(ERC721TestCase memory t) internal returns (address) {
-        TestCase memory test = t.common;
-        uint256 tokenId = t.tokenId;
-
-        token.mint(test.seller(), tokenId);
-
-        address swapper = _swapper(t);
-        vm.label(swapper, "swapper");
-
-        vm.assume(test.seller() != swapper && test.buyer() != swapper && test.caller != swapper);
-
-        _approveSwapper(test, tokenId, swapper);
-        vm.assume(_balance(swapper) == 0);
-        _beforeExecute(test, swapper);
-
-        return swapper;
-    }
-
+    /**
+     * @notice Tests _fill()ing of the swap defined by the test case.
+     * @dev See external test*() functions for concrete usage.
+     * @param t Test case from which a swap is defined.
+     * @param err If non-empty, expects that a call to _fill(t) reverts with this error. If empty, expects success and a
+     * corresponding transfer of the token from `seller` to `buyer`.
+     */
     function _testFill(ERC721TestCase memory t, bytes memory err) internal {
         address swapper = _beforeExecute(t);
 
-        TestCase memory test = t.common;
+        TestCase memory test = t.base;
         uint256 tokenId = t.tokenId;
 
         bool passes = err.length == 0;
@@ -76,49 +75,61 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         _afterExecute(test, swapper, passes);
     }
 
+    /// @dev Common setup shared by tests of both fill() and cancel().
+    function _beforeExecute(ERC721TestCase memory t) private returns (address) {
+        TestCase memory test = t.base;
+        uint256 tokenId = t.tokenId;
+
+        token.mint(test.seller(), tokenId);
+
+        address swapper = _swapper(t);
+        vm.label(swapper, "swapper");
+
+        vm.assume(test.seller() != swapper && test.buyer() != swapper && test.caller != swapper);
+
+        _approveSwapper(test, tokenId, swapper);
+        vm.assume(_balance(swapper) == 0);
+        _beforeExecute(test, swapper);
+
+        return swapper;
+    }
+
     function testHappyPath(ERC721TestCase memory t)
         public
-        assumeValidTest(t.common)
-        assumePaymentsValid(t.common)
-        assumeSufficientPayment(t.common)
-        assumeApproving(t.common)
+        assumeValidTest(t.base)
+        assumePaymentsValid(t.base)
+        assumeSufficientPayment(t.base)
+        assumeApproving(t.base)
     {
         _testFill(t, "");
     }
 
     function testNotApproved(ERC721TestCase memory t)
-        public
-        assumeValidTest(t.common)
-        assumePaymentsValid(t.common)
-        assumeSufficientPayment(t.common)
+        external
+        assumeValidTest(t.base)
+        assumePaymentsValid(t.base)
+        assumeSufficientPayment(t.base)
+        assumeNotApproving(t.base) // <----- NB
     {
-        vm.assume(t.common.approval() == Approval.None);
-
         address swapper = _swapper(t);
         bytes memory err = abi.encodeWithSelector(IERC721Errors.ERC721InsufficientApproval.selector, swapper, t.tokenId);
         _testFill(t, err);
     }
 
     function testInsufficientBalance(ERC721TestCase memory t)
-        public
-        assumeValidTest(t.common)
-        assumePaymentsValid(t.common)
-        assumeApproving(t.common)
-        assumeInsufficientPayment(t.common)
+        external
+        assumeValidTest(t.base)
+        assumePaymentsValid(t.base)
+        assumeApproving(t.base)
+        assumeInsufficientPayment(t.base) // <----- NB
     {
-        _testFill(t, _insufficientBalanceError(t.common));
+        _testFill(t, _insufficientBalanceError(t.base));
     }
 
-    function testReplayProtection(ERC721TestCase memory t, address replayer)
-        public
-        assumeValidTest(t.common)
-        assumePaymentsValid(t.common)
-        assumeSufficientPayment(t.common)
-        assumeApproving(t.common)
-    {
-        _testFill(t, "");
+    function testReplayProtection(ERC721TestCase memory t, address replayer) external {
+        testHappyPath(t);
 
-        TestCase memory test = t.common;
+        TestCase memory test = t.base;
 
         vm.startPrank(test.buyer());
         token.transferFrom(test.buyer(), test.seller(), t.tokenId);
@@ -129,10 +140,10 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         assertEq(token.ownerOf(t.tokenId), test.seller());
     }
 
-    function testCancel(ERC721TestCase memory t, address vandal) public assumeValidTest(t.common) {
+    function testCancel(ERC721TestCase memory t, address vandal) external assumeValidTest(t.base) {
         address swapper = _beforeExecute(t);
 
-        TestCase memory test = t.common;
+        TestCase memory test = t.base;
         vm.assume(vandal != test.seller() && vandal != test.buyer());
 
         vm.label(swapper, "swapper");
@@ -166,19 +177,19 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         assertEq(token.ownerOf(t.tokenId), test.seller());
     }
 
-    function _cancelAs(ERC721TestCase memory t, address caller) internal {
+    function _cancelAs(ERC721TestCase memory t, address caller) private {
         vm.startPrank(caller);
         _cancel(t);
         vm.stopPrank();
     }
 
-    function testGas() public {
+    function testGas() external {
         Disbursement[5] memory thirdParty;
         uint128 total = 1 ether;
 
         _testFill(
             ERC721TestCase({
-                common: TestCase({
+                base: TestCase({
                     parties: Parties({buyer: makeAddr("buyer"), seller: makeAddr("seller")}),
                     _thirdParty: thirdParty,
                     _numThirdParty: 0,

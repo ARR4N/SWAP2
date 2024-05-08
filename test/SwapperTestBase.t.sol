@@ -116,12 +116,16 @@ abstract contract SwapperTestBase is Test, ITestEvents {
         _;
     }
 
-    /// TODO This name doesn't reflect reality for ERC20 consideration.
-    function _totalPaying(TestCase memory) internal view virtual returns (uint256);
+    /**
+     * @dev Returns the payment amount made available to the swapper contract to use as consideration. When paying with
+     * native token, this is the balance of the swapper at execution. When paying with ERC20, this is the minimum of the
+     * buyer's balance and the amount for which the swapper is approved.
+     */
+    function _paymentTendered(TestCase memory) internal view virtual returns (uint256);
 
     /// @dev Returns whether sufficient payment is being issued to cover the total consideration.
     function _sufficientPayment(TestCase memory t) internal view returns (bool) {
-        return _totalPaying(t) >= t.total();
+        return _paymentTendered(t) >= t.total();
     }
 
     /// @dev Calls vm.assume() with the return value of _sufficientPayment().
@@ -212,6 +216,12 @@ abstract contract SwapperTestBase is Test, ITestEvents {
     /// @dev Assumes that either approve() or setApprovalForAll() will be called by _approveSwapper().
     modifier assumeApproving(TestCase memory t) {
         vm.assume(t.approval() != Approval.None);
+        _;
+    }
+
+    /// @dev Assumes that neither approve() nor setApprovalForAll() will be called by _approveSwapper().
+    modifier assumeNotApproving(TestCase memory t) {
+        vm.assume(t.approval() == Approval.None);
         _;
     }
 
