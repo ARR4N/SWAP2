@@ -8,7 +8,6 @@ contract TMPLSwapper is TMPLSwapperBase {
     constructor(Swap memory swap) TMPLSwapperBase(swap) {}
 
     function _fill(Swap memory) internal override {}
-    function _cancel(Swap memory) internal override {}
 
     function _postExecutionInvariantsMet(Swap memory) internal pure override returns (bool) {
         return false;

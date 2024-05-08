@@ -7,7 +7,7 @@ import {Consideration, Disbursement, Parties, PayableParties, InsufficientBalanc
 contract NativeTokenConsideration {
     using Address for address payable;
 
-    function _beforeFill(Consideration memory c) internal view {
+    function _beforeFill(Consideration memory c) internal view virtual {
         if (address(this).balance < c.total) {
             revert InsufficientBalance(address(this).balance, c.total);
         }
@@ -21,7 +21,7 @@ contract NativeTokenConsideration {
         _sendEntireBalance(parties.seller);
     }
 
-    function _cancel(PayableParties memory parties) internal {
+    function _cancel(PayableParties memory parties) internal virtual {
         _sendEntireBalance(parties.buyer);
     }
 
