@@ -6,6 +6,6 @@ import {Consideration, PayableParties} from "../TypesAndConstants.sol";
 
 struct ERC721ForNativeSwap {
     PayableParties parties;
-    ERC721Token token;
+    ERC721Token offer;
     Consideration consideration;
 }

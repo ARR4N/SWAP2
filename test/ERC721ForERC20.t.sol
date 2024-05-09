@@ -29,8 +29,8 @@ contract ERC721ForERC20Test is ERC721ForXTest, ERC20Test {
     function _asSwap(ERC721TestCase memory t) private view returns (ERC721ForERC20Swap memory) {
         return ERC721ForERC20Swap({
             parties: t.base.parties,
+            offer: ERC721Token({addr: token, id: t.tokenId}),
             consideration: t.base.consideration(),
-            token: ERC721Token({addr: token, id: t.tokenId}),
             currency: currency
         });
     }

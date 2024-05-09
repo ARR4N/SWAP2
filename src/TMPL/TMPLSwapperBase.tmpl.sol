@@ -7,24 +7,19 @@ pragma solidity 0.8.25;
 import {TMPLSwap} from "./TMPLSwap.sol";
 
 import {ConstructorArtifacts} from "../ConstructorArtifacts.sol";
+import {ERC721SwapperLib} from "../ERC721SwapperLib.sol";
 import {ET, Message} from "../ET.sol";
-import {
-    UnsupportedAction,
-    Parties,
-    PayableParties,
-    Consideration,
-    ISwapperEvents,
-    FILL,
-    CANCEL
-} from "../TypesAndConstants.sol";
+import {SwapperBase} from "../SwapperBase.sol";
+import {UnsupportedAction, FILL, CANCEL} from "../TypesAndConstants.sol";
 
 /// @dev Base contract for a TMPLSwapper implementation.
-abstract contract TMPLSwapperBase is ConstructorArtifacts, ET, ISwapperEvents {
+abstract contract TMPLSwapperBase is ConstructorArtifacts, ET, SwapperBase {
     constructor(TMPLSwap memory swap) contractAlwaysRevertsEmpty {
         Message action = ET._phoneHome();
         if (action == FILL) {
             _beforeFill(swap.consideration);
-            _fill(swap);
+            ERC721SwapperLib._transfer(swap.offer, _asNonPayableParties(swap.parties));
+            _disburseFunds(swap);
         } else if (action == CANCEL) {
             _cancel(swap.parties);
         } else {
@@ -34,11 +29,7 @@ abstract contract TMPLSwapperBase is ConstructorArtifacts, ET, ISwapperEvents {
         assert(_postExecutionInvariantsMet(swap));
     }
 
-    function _beforeFill(Consideration memory) internal view virtual {}
-    function _fill(TMPLSwap memory) internal virtual;
-
-    function _cancel(Parties memory) internal virtual {}
-    function _cancel(PayableParties memory) internal virtual {}
+    function _disburseFunds(TMPLSwap memory) internal virtual;
 
     /**
      * @dev Called at the end of the constructor, which reverts if this function returns false.

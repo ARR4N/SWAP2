@@ -32,10 +32,4 @@ contract NativeTokenConsideration {
     function _postExecutionInvariantsMet() internal view returns (bool) {
         return address(this).balance == 0;
     }
-
-    function _asNonPayableParties(PayableParties memory pay) internal pure returns (Parties memory nonPay) {
-        assembly ("memory-safe") {
-            nonPay := pay
-        }
-    }
 }

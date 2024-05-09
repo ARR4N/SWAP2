@@ -7,7 +7,7 @@ import {Consideration, Parties} from "../TypesAndConstants.sol";
 
 struct ERC721ForERC20Swap {
     Parties parties;
-    ERC721Token token;
+    ERC721Token offer;
     Consideration consideration;
     IERC20 currency;
 }

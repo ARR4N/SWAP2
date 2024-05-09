@@ -24,8 +24,8 @@ contract ERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
     function _asSwap(ERC721TestCase memory t) private view returns (ERC721ForNativeSwap memory) {
         return ERC721ForNativeSwap({
             parties: _asPayableParties(t.base.parties),
-            consideration: t.base.consideration(),
-            token: ERC721Token({addr: token, id: t.tokenId})
+            offer: ERC721Token({addr: token, id: t.tokenId}),
+            consideration: t.base.consideration()
         });
     }
 
