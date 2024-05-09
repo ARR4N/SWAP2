@@ -7,13 +7,11 @@ import {Consideration, Disbursement, PayableParties, InsufficientBalance} from "
 contract NativeTokenConsideration {
     using Address for address payable;
 
-    function _beforeFill(Consideration memory c) internal view virtual {
+    function _disburseFunds(PayableParties memory parties, Consideration memory c) internal {
         if (address(this).balance < c.total) {
             revert InsufficientBalance(address(this).balance, c.total);
         }
-    }
 
-    function _disburseFunds(PayableParties memory parties, Consideration memory c) internal {
         Disbursement[] memory tP = c.thirdParty;
         for (uint256 i = 0; i < tP.length; ++i) {
             payable(tP[i].to).sendValue(tP[i].amount);

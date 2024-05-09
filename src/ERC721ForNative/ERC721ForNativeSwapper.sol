@@ -11,10 +11,6 @@ import {Consideration, PayableParties} from "../TypesAndConstants.sol";
 contract ERC721ForNativeSwapper is ERC721ForNativeSwapperBase, NativeTokenConsideration {
     constructor(Swap memory swap) payable ERC721ForNativeSwapperBase(swap) {}
 
-    function _beforeFill(Consideration memory c) internal view override(SwapperBase, NativeTokenConsideration) {
-        NativeTokenConsideration._beforeFill(c);
-    }
-
     function _disburseFunds(Swap memory swap) internal override {
         NativeTokenConsideration._disburseFunds(swap.parties, swap.consideration);
     }

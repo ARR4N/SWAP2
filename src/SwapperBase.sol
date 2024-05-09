@@ -5,8 +5,6 @@ import {ISwapperEvents, Parties, PayableParties, Consideration} from "./TypesAnd
 
 /// @dev Base contract for all <T>Swapper implementations.
 contract SwapperBase is ISwapperEvents {
-    function _beforeFill(Consideration memory) internal view virtual {}
-
     function _cancel(Parties memory) internal virtual {}
     function _cancel(PayableParties memory) internal virtual {}
 

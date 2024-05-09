@@ -17,7 +17,6 @@ abstract contract TMPLSwapperBase is ConstructorArtifacts, ET, SwapperBase {
     constructor(TMPLSwap memory swap) contractAlwaysRevertsEmpty {
         Message action = ET._phoneHome();
         if (action == FILL) {
-            _beforeFill(swap.consideration);
             ERC721SwapperLib._transfer(swap.offer, _asNonPayableParties(swap.parties));
             _disburseFunds(swap);
         } else if (action == CANCEL) {
