@@ -16,3 +16,6 @@ docs/
 # IDEs
 .vscode/
 workspace.code-workspace
+
+# Generated Solidity files
+*.gen.sol

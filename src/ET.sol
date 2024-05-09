@@ -16,7 +16,7 @@ type Message is bytes32;
  * @dev Phoning home is typically performed in a constrctor and MUST be done in the same transaction as Messages are
  * kept in transient storage.
  * @dev ET contracts SHOULD NOT be deployed directly, but instead via ETDeployer._deploy().
- * @author Arran Schlosberg (@divergencearran / github.com/aschlosberg)
+ * @author Arran Schlosberg (@divergencearran / github.com/arr4n)
  */
 contract ET {
     function _phoneHome() internal view returns (Message) {
@@ -32,12 +32,31 @@ interface IETHome {
 }
 
 /**
- * @dev Deployer of ET contracts, responsible for storing Messages and making them available to deployed contracts.
- * @author Arran Schlosberg (@divergencearran / github.com/aschlosberg)
+ * @dev Predictor of ET contract addresses. Little more than a wrapper around OpenZeppelin's Create2 library.
+ * @author Arran Schlosberg (@divergencearran / github.com/arr4n)
  */
-contract ETDeployer is IETHome {
+contract ETPredictor {
+    /**
+     * @dev Convenience wrapper around OpenZeppelin's Create2.computeAddress() to match the argument signature of
+     * _deploy().
+     */
+    function _predictDeploymentAddress(bytes memory bytecode, bytes32 salt) internal view returns (address) {
+        return Create2.computeAddress(salt, keccak256(bytecode), address(this));
+    }
+}
+
+/**
+ * @dev Deployer of ET contracts, responsible for storing Messages and making them available to deployed contracts.
+ * @author Arran Schlosberg (@divergencearran / github.com/arr4n)
+ */
+contract ETDeployer is IETHome, ETPredictor {
+    error PredictedAddressMismatch(address deployed, address predicted);
+    /// @dev Thrown when create2() fails with returndatasize()==0, for precise error-path testing with expectRevert().
+    error Create2EmptyRevert();
+
     /**
      * @dev Deploys an ET contract, first transiently storing the Message to make it available via etMessage().
+     * @param predicted Predicted deployment address, saving gas if pre-computed off-chain.
      * @param bytecode Creation bytecode of the contract to be deployed; aka init_code or creationCode.
      * @param value Amount, in wei, to send during deployment.
      * @param salt CREATE2 salt.
@@ -46,34 +65,40 @@ contract ETDeployer is IETHome {
      * @custom:reverts If deployment fails; propagates the return data from CREATE2, which will be empty if attempting
      * to re-deploy to the same address.
      */
-    function _deploy(bytes memory bytecode, uint256 value, bytes32 salt, Message message) internal returns (address) {
-        address predicted = _predictDeploymentAddress(bytecode, salt);
+    function _deploy(address predicted, bytes memory bytecode, uint256 value, bytes32 salt, Message message)
+        internal
+        returns (address)
+    {
         address deployed;
-
         assembly ("memory-safe") {
             // There is no need to explicitly clear this TSTORE (as solc recommends) because it is uniquely tied to the
             // deployed contract, which can never be reused.
             tstore(shr(96, shl(96, predicted)), message)
             deployed := create2(value, add(bytecode, 0x20), mload(bytecode), salt)
         }
-        if (deployed != address(0)) {
-            assert(deployed == predicted);
-            return deployed;
+
+        if (deployed == address(0)) {
+            assembly ("memory-safe") {
+                let free := mload(0x40)
+
+                if iszero(returndatasize()) {
+                    mstore(free, 0x33d2bae4) // Create2EmptyRevert()
+                    revert(add(free, 28), 4)
+                }
+
+                returndatacopy(free, 0, returndatasize())
+                revert(free, returndatasize())
+            }
+        }
+        if (deployed != predicted) {
+            revert PredictedAddressMismatch(deployed, predicted);
         }
 
-        // NOT memory-safe as we're reverting on all paths from here.
-        assembly {
-            returndatacopy(0, 0, returndatasize())
-            revert(0, returndatasize())
-        }
+        return deployed;
     }
 
-    /**
-     * @dev Convenience wrapper around OpenZeppelin's Create2.computeAddress() to match the argument signature of
-     * _deploy().
-     */
-    function _predictDeploymentAddress(bytes memory bytecode, bytes32 salt) internal view returns (address) {
-        return Create2.computeAddress(salt, keccak256(bytecode), address(this));
+    function _deploy(bytes memory bytecode, uint256 value, bytes32 salt, Message message) internal returns (address) {
+        return _deploy(_predictDeploymentAddress(bytecode, salt), bytecode, value, salt, message);
     }
 
     /**
