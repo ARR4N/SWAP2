@@ -2,7 +2,7 @@
 pragma solidity 0.8.25;
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {Consideration, Disbursement, Parties, PayableParties, InsufficientBalance} from "./TypesAndConstants.sol";
+import {Consideration, Disbursement, PayableParties, InsufficientBalance} from "./TypesAndConstants.sol";
 
 contract NativeTokenConsideration {
     using Address for address payable;
