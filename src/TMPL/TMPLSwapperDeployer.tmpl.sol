@@ -38,8 +38,8 @@ contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, ISwapperEvents
         return a;
     }
 
-    function swapper(TMPLSwap memory swap, bytes32 salt) external view returns (address payable) {
-        return payable(_swapper(swap, salt));
+    function swapper(TMPLSwap memory swap, bytes32 salt) external view returns (address) {
+        return _swapper(swap, salt);
     }
 }
 
