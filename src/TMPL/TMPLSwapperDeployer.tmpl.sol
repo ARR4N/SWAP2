@@ -8,7 +8,8 @@ import {TMPLSwap} from "./TMPLSwap.sol";
 import {TMPLSwapper} from "./TMPLSwapper.sol";
 
 import {ETDeployer, ETPredictor} from "../ET.sol";
-import {ISwapperEvents, OnlyBuyerCanCancel, FILL, CANCEL} from "../TypesAndConstants.sol";
+import {SwapperDeployerBase} from "../SwapperDeployerBase.sol";
+import {OnlyBuyerCanCancel, Action, ActionMessageLib, FILL, CANCEL_MSG} from "../TypesAndConstants.sol";
 
 /// @dev Predictor of TMPLSwapper contract addresses.
 contract TMPLSwapperPredictor is ETPredictor {
@@ -22,9 +23,12 @@ contract TMPLSwapperPredictor is ETPredictor {
 }
 
 /// @dev Deployer of TMPLSwapper contracts.
-contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, ISwapperEvents {
+abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, SwapperDeployerBase {
+    using ActionMessageLib for Action;
+
     function fill(TMPLSwap memory swap, bytes32 salt) external payable returns (address) {
-        address a = _deploy(_bytecode(swap), msg.value, salt, FILL);
+        (address payable feeRecipient, uint16 basisPoints) = _platformFeeConfig();
+        address a = _deploy(_bytecode(swap), msg.value, salt, FILL.withFeeConfig(feeRecipient, basisPoints));
         emit Filled(a);
         return a;
     }
@@ -33,7 +37,7 @@ contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, ISwapperEvents
         if (msg.sender != swap.parties.buyer) {
             revert OnlyBuyerCanCancel();
         }
-        address a = _deploy(_bytecode(swap), 0, salt, CANCEL);
+        address a = _deploy(_bytecode(swap), 0, salt, CANCEL_MSG);
         emit Cancelled(a);
         return a;
     }

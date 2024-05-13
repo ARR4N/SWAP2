@@ -9,8 +9,8 @@ import {ERC20Consideration} from "../ERC20Consideration.sol";
 contract ERC721ForERC20Swapper is ERC721ForERC20SwapperBase, ERC20Consideration {
     constructor(Swap memory swap) ERC721ForERC20SwapperBase(swap) {}
 
-    function _disburseFunds(Swap memory swap) internal override {
-        ERC20Consideration._disburseFunds(swap.parties, swap.consideration, swap.currency);
+    function _disburseFunds(Swap memory swap, address payable feeRecipient, uint256 fee) internal override {
+        ERC20Consideration._disburseFunds(swap.parties, swap.consideration, swap.currency, feeRecipient, fee);
     }
 
     function _postExecutionInvariantsMet(Swap memory) internal pure override returns (bool) {
