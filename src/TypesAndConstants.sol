@@ -35,8 +35,8 @@ function _eq(Action a, Action b) pure returns (bool) {
 
 using {_eq as ==} for Action global;
 
-/// @dev Thrown if an address other than the buying party attempts to cancel a swap.
-error OnlyBuyerCanCancel();
+/// @dev Thrown if an address other than the selling or buying party attempts to cancel a swap.
+error OnlyPartyCanCancel();
 
 /// @dev Thrown if phoning home returns an unsupported action. NOTE: if this happens there is a bug.
 error UnsupportedAction(Action);

@@ -6,7 +6,7 @@ import {console2} from "forge-std/console2.sol";
 import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 
 import {ERC721Token} from "../src/ERC721SwapperLib.sol";
-import {OnlyBuyerCanCancel, ExcessPlatformFee, Disbursement, Parties} from "../src/TypesAndConstants.sol";
+import {OnlyPartyCanCancel, ExcessPlatformFee, Disbursement, Parties} from "../src/TypesAndConstants.sol";
 import {ETDeployer} from "../src/ET.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
@@ -171,7 +171,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         assertEq(token.ownerOf(t.tokenId), test.seller());
     }
 
-    function testCancel(ERC721TestCase memory t, address vandal) external assumeValidTest(t.base) {
+    function testCancel(ERC721TestCase memory t, address vandal, bool asSeller) external assumeValidTest(t.base) {
         address swapper = _beforeExecute(t);
 
         TestCase memory test = t.base;
@@ -181,7 +181,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         _beforeExecute(test, swapper);
 
         {
-            vm.expectRevert(abi.encodeWithSelector(OnlyBuyerCanCancel.selector));
+            vm.expectRevert(abi.encodeWithSelector(OnlyPartyCanCancel.selector));
             _cancelAs(t, vandal);
             _afterExecute(test, swapper, false);
         }
@@ -191,7 +191,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
             vm.expectEmit(true, true, true, true, address(factory));
             emit Cancelled(_swapper(t));
-            _cancelAs(t, test.buyer());
+            _cancelAs(t, asSeller ? test.seller() : test.buyer());
 
             assertEq(_balance(swapper), 0, "swapper balance zero after cancel");
             assertEq(_balance(test.buyer()), expectedBuyerBalance, "buyer balance after cancel");
