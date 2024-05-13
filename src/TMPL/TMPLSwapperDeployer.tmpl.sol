@@ -9,7 +9,7 @@ import {TMPLSwapper} from "./TMPLSwapper.sol";
 
 import {ETDeployer, ETPredictor} from "../ET.sol";
 import {SwapperDeployerBase} from "../SwapperDeployerBase.sol";
-import {OnlyBuyerCanCancel, Action, ActionMessageLib, FILL, CANCEL_MSG} from "../TypesAndConstants.sol";
+import {OnlyPartyCanCancel, Action, ActionMessageLib, FILL, CANCEL_MSG} from "../TypesAndConstants.sol";
 
 /// @dev Predictor of TMPLSwapper contract addresses.
 contract TMPLSwapperPredictor is ETPredictor {
@@ -34,8 +34,8 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
     }
 
     function cancel(TMPLSwap memory swap, bytes32 salt) external returns (address) {
-        if (msg.sender != swap.parties.buyer) {
-            revert OnlyBuyerCanCancel();
+        if (msg.sender != swap.parties.seller && msg.sender != swap.parties.buyer) {
+            revert OnlyPartyCanCancel();
         }
         address a = _deploy(_bytecode(swap), 0, salt, CANCEL_MSG);
         emit Cancelled(a);
