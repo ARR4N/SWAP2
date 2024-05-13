@@ -218,16 +218,19 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         Disbursement[5] memory thirdParty;
         uint128 total = 1 ether;
 
+        address seller = makeAddr("seller");
+        address fees = makeAddr("feeRecipient");
+
         _testFill(
             ERC721TestCase({
                 base: TestCase({
-                    parties: Parties({buyer: makeAddr("buyer"), seller: makeAddr("seller")}),
+                    parties: Parties({buyer: makeAddr("buyer"), seller: seller}),
                     _thirdParty: thirdParty,
                     _numThirdParty: 0,
                     _totalConsideration: total,
                     _maxPlatformFee: total,
                     platformFeeBasisPoints: 250,
-                    platformFeeRecipient: payable(makeAddr("feeRecipient")),
+                    platformFeeRecipient: payable(fees),
                     _approval: uint8(Approval.Approve),
                     caller: makeAddr("buyer"),
                     salt: keccak256("pepper"),
@@ -238,5 +241,8 @@ abstract contract ERC721ForXTest is SwapperTestBase {
             }),
             ""
         );
+
+        assertEq(_balance(seller), 0.975 ether, "explicit seller balance");
+        assertEq(_balance(fees), 0.025 ether, "explicit fee-recipient balance");
     }
 }
