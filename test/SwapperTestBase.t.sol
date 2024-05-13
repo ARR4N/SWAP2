@@ -9,6 +9,7 @@ import {Parties, PayableParties, Consideration, Disbursement, ISwapperEvents} fr
 
 import {ERC721, IERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract Token is ERC721 {
     constructor() ERC721("", "") {}
@@ -20,6 +21,13 @@ contract Token is ERC721 {
 
 interface ITestEvents is ISwapperEvents {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokeinId);
+}
+
+contract TestableSWAP2 is SWAP2 {
+    function setPlatformFee(address payable recipient, uint16 basisPoints) external {
+        feeConfig.recipient = recipient;
+        feeConfig.basisPoints = basisPoints;
+    }
 }
 
 /**
@@ -34,10 +42,12 @@ abstract contract SwapperTestBase is Test, ITestEvents {
     using SwapperTestLib for TestCase;
 
     SWAP2 public factory;
+    TestableSWAP2 public mutableFactory;
     Token public token;
 
     function setUp() public virtual {
-        factory = new SWAP2();
+        mutableFactory = new TestableSWAP2();
+        factory = mutableFactory;
         vm.label(address(factory), "SWAP2");
         token = new Token();
         vm.label(address(token), "FakeERC721");
@@ -70,11 +80,15 @@ abstract contract SwapperTestBase is Test, ITestEvents {
     struct TestCase {
         // Swap particulars
         Parties parties;
+        // Fees
+        address payable platformFeeRecipient;
+        uint16 platformFeeBasisPoints;
         // Consideration, limited in the number of third-party recipients to stop the fuzzer going overboard.
         // Use SwapperTestLib.consideration() to access:
         uint256 _numThirdParty; // overidden by assumeValidTest() so sum(_thirdParty) < total
         Disbursement[5] _thirdParty;
         uint256 _totalConsideration;
+        uint256 _maxPlatformFee;
         // Pre-execution config
         uint8 _approval; // use SwapperTestLib.approval() to access as an Approval enum.
         // Tx execution
@@ -83,6 +97,11 @@ abstract contract SwapperTestBase is Test, ITestEvents {
         // Payments; only one will be necessary for the specific test.
         NativePayments native;
         ERC20Payments erc20;
+    }
+
+    /// @dev Sets the platform-fee config to the parameters provided in the test case.
+    function _setPlatformFee(TestCase memory t) internal {
+        mutableFactory.setPlatformFee(t.platformFeeRecipient, t.platformFeeBasisPoints);
     }
 
     /// @dev Returns the balance of the address, denominated in the payment currency (native or specific ERC20).
@@ -98,11 +117,12 @@ abstract contract SwapperTestBase is Test, ITestEvents {
     function _afterExecute(TestCase memory, address swapper, bool executed) internal virtual;
 
     /**
-     * @dev Returns the total consideration the seller is expected to receive after a successful call to fill().
+     * @dev Returns the total consideration the seller is expected to receive, beyond the total consideration, after a
+     * successful call to fill().
      * @dev Although in production this will be `Consideration.total` minus the sum of third-party disbursements, in
      * fuzzed tests for native-token consideration the pre-payment + call-value may exceed this value.
      */
-    function _expectedSellerBalanceAfterFill(TestCase memory) internal view virtual returns (uint256);
+    function _expectedExcessSellerBalanceAfterFill(TestCase memory) internal view virtual returns (uint256);
 
     /// @dev Returns the amount to pre-pay the predicted swapper address. Only valid for native-token consideration.
     function _swapperPrePay(TestCase memory) internal view virtual returns (uint256);
@@ -140,6 +160,16 @@ abstract contract SwapperTestBase is Test, ITestEvents {
         _;
     }
 
+    modifier assumeValidPlatformFee(TestCase memory t) {
+        vm.assume(t.platformFee() <= t._maxPlatformFee);
+        _;
+    }
+
+    modifier assumeExcessPlatformFee(TestCase memory t) {
+        vm.assume(t.platformFee() > t._maxPlatformFee);
+        _;
+    }
+
     /// @dev Returns the expected error when insufficient payment is being issued to cover the total consideration.
     function _insufficientBalanceError(TestCase memory) internal view virtual returns (bytes memory);
 
@@ -154,6 +184,7 @@ abstract contract SwapperTestBase is Test, ITestEvents {
             _assumeNonContractWithoutBalance(t.seller());
             _assumeNonContractWithoutBalance(t.buyer());
             _assumeNonContractWithoutBalance(t.caller);
+            _assumeNonContractWithoutBalance(t.platformFeeRecipient);
 
             vm.label(t.seller(), "seller");
             vm.label(t.buyer(), "buyer");
@@ -164,11 +195,18 @@ abstract contract SwapperTestBase is Test, ITestEvents {
             } else {
                 vm.label(t.caller, "swap-executor");
             }
+
+            address rec = t.platformFeeRecipient;
+            vm.assume(rec != t.seller() && rec != t.buyer());
+            vm.label(t.platformFeeRecipient, "platform-fee-recipient");
         }
 
         {
+            vm.assume(t._totalConsideration >= t._maxPlatformFee);
+            vm.assume(t.platformFeeBasisPoints <= 10_000);
+            uint256 remaining = t._totalConsideration - t._maxPlatformFee;
+
             t._numThirdParty = 0;
-            uint256 remaining = t._totalConsideration;
 
             Disbursement[5] memory disburse = t._thirdParty;
             for (uint256 i = 0; i < disburse.length; ++i) {
@@ -277,7 +315,11 @@ library SwapperTestLib {
      */
     function consideration(SwapperTestBase.TestCase memory t) internal pure returns (Consideration memory) {
         uint256 n = t._numThirdParty;
-        Consideration memory c = Consideration({thirdParty: new Disbursement[](n), total: t._totalConsideration});
+        Consideration memory c = Consideration({
+            thirdParty: new Disbursement[](n),
+            maxPlatformFee: t._maxPlatformFee,
+            total: t._totalConsideration
+        });
         for (uint256 i = 0; i < n; ++i) {
             c.thirdParty[i] = t._thirdParty[i];
         }
@@ -299,8 +341,13 @@ library SwapperTestLib {
         return sum;
     }
 
+    /// @dev Returns the platform fee required to fill the swap defined by the test case.
+    function platformFee(SwapperTestBase.TestCase memory t) internal pure returns (uint256) {
+        return Math.mulDiv(t.total(), t.platformFeeBasisPoints, 10_000);
+    }
+
     /// @dev Returns the total consideration remaining for the seller after deducting all third-party disbursements.
     function totalForSeller(SwapperTestBase.TestCase memory t) internal pure returns (uint256) {
-        return t.total() - t.totalForThirdParties();
+        return t.total() - t.totalForThirdParties() - t.platformFee();
     }
 }

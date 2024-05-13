@@ -59,8 +59,8 @@ abstract contract ERC20Test is SwapperTestBase {
     function _afterExecute(TestCase memory t, address swapper, bool executed) internal override {}
 
     /// @inheritdoc SwapperTestBase
-    function _expectedSellerBalanceAfterFill(TestCase memory t) internal pure override returns (uint256) {
-        return t.totalForSeller();
+    function _expectedExcessSellerBalanceAfterFill(TestCase memory) internal pure override returns (uint256) {
+        return 0;
     }
 
     /// @inheritdoc SwapperTestBase

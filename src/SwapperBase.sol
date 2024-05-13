@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.25;
 
-import {ISwapperEvents, Parties, PayableParties, Consideration} from "./TypesAndConstants.sol";
+import {Parties, PayableParties} from "./TypesAndConstants.sol";
 
 /// @dev Base contract for all <T>Swapper implementations.
-contract SwapperBase is ISwapperEvents {
+contract SwapperBase {
     function _cancel(Parties memory) internal virtual {}
     function _cancel(PayableParties memory) internal virtual {}
 

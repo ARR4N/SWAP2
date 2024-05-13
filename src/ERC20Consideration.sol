@@ -8,8 +8,17 @@ import {Consideration, Disbursement, Parties} from "./TypesAndConstants.sol";
 contract ERC20Consideration {
     using SafeERC20 for IERC20;
 
-    function _disburseFunds(Parties memory parties, Consideration memory c, IERC20 currency) internal {
+    function _disburseFunds(
+        Parties memory parties,
+        Consideration memory c,
+        IERC20 currency,
+        address feeRecipient,
+        uint256 fee
+    ) internal {
         uint256 remaining = c.total;
+
+        currency.safeTransferFrom(parties.buyer, feeRecipient, fee);
+        remaining -= fee;
 
         Disbursement[] memory tP = c.thirdParty;
         for (uint256 i = 0; i < tP.length; ++i) {
