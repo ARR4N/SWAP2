@@ -33,9 +33,9 @@ abstract contract NativeTokenTest is SwapperTestBase {
     }
 
     /// @inheritdoc SwapperTestBase
-    function _expectedSellerBalanceAfterFill(TestCase memory t) internal pure override returns (uint256) {
+    function _expectedExcessSellerBalanceAfterFill(TestCase memory t) internal pure override returns (uint256) {
         NativePayments memory pay = t.native;
-        return uint256(pay.prePay) + uint256(pay.callValue) - t.totalForThirdParties();
+        return uint256(pay.prePay) + uint256(pay.callValue) - t.total();
     }
 
     /// @inheritdoc SwapperTestBase
