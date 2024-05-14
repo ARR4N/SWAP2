@@ -73,13 +73,13 @@ abstract contract ERC721ForXTest is SwapperTestBase {
             passes ? test.totalForSeller() + _expectedExcessSellerBalanceAfterFill(test) : 0,
             "seller balance"
         );
-        assertEq(_balance(test.platformFeeRecipient), passes ? test.platformFee() : 0);
+        assertEq(_balance(test.platformFeeRecipient), passes ? test.platformFee() : 0, "platform-fee recipient");
         assertEq(_balance(swapper), passes ? 0 : _swapperPrePay(test), "swapper balance");
         assertEq(_balance(address(factory)), 0, "factory balance remains zero");
 
         Disbursement[] memory tP = t.base.consideration().thirdParty;
         for (uint256 i = 0; i < tP.length; ++i) {
-            assertEq(_balance(tP[i].to), passes ? tP[i].amount : 0);
+            assertEq(_balance(tP[i].to), passes ? tP[i].amount : 0, "third-party");
         }
 
         assertEq(swapper.code.length, passes ? 3 : 0, "deployed swapper bytecode length");
