@@ -184,8 +184,8 @@ abstract contract SwapperTestBase is Test, ITestEvents {
      */
     modifier assumeValidTest(TestCase memory t) {
         {
-            _assumeUnseenAddress(t.seller());
-            _assumeUnseenAddress(t.buyer());
+            _assumeDistinctAddress(t.seller());
+            _assumeDistinctAddress(t.buyer());
 
             _assumeNonContractWithoutBalance(t.seller());
             _assumeNonContractWithoutBalance(t.buyer());
@@ -199,11 +199,11 @@ abstract contract SwapperTestBase is Test, ITestEvents {
             } else if (t.caller == t.buyer()) {
                 vm.label(t.caller, "buyer (swap executor)");
             } else {
-                _assumeUnseenAddress(t.caller);
+                _assumeDistinctAddress(t.caller);
                 vm.label(t.caller, "swap-executor");
             }
 
-            _assumeUnseenAddress(t.platformFeeRecipient);
+            _assumeDistinctAddress(t.platformFeeRecipient);
             vm.label(t.platformFeeRecipient, "platform-fee-recipient");
         }
 
@@ -223,9 +223,8 @@ abstract contract SwapperTestBase is Test, ITestEvents {
                 remaining -= amt;
 
                 address to = disburse[i].to;
-                vm.assume(to != t.seller() && to != t.buyer() && to != t.caller && to != t.platformFeeRecipient);
                 _assumeNonContractWithoutBalance(to);
-                _assumeUnseenAddress(to);
+                _assumeDistinctAddress(to);
 
                 ++t._numThirdParty;
             }
@@ -238,7 +237,7 @@ abstract contract SwapperTestBase is Test, ITestEvents {
 
     uint256[] private _seenAddresses;
 
-    function _assumeUnseenAddress(address a) internal {
+    function _assumeDistinctAddress(address a) internal {
         uint256 addr = uint256(uint160(a));
         bool seen;
         assembly ("memory-safe") {
