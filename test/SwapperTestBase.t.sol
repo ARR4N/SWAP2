@@ -51,8 +51,10 @@ abstract contract SwapperTestBase is Test, ITestEvents {
 
     function setUp() public virtual {
         mutableFactory = new TestableSWAP2();
+        mutableFactory.setPlatformFee(payable(makeAddr("feeRecipient")), 0);
         factory = mutableFactory;
         vm.label(address(factory), "SWAP2");
+
         token = new Token();
         vm.label(address(token), "FakeERC721");
     }
