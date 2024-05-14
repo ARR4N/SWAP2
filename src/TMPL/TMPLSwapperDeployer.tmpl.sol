@@ -26,6 +26,8 @@ contract TMPLSwapperPredictor is ETPredictor {
 abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, SwapperDeployerBase {
     using ActionMessageLib for Action;
 
+    event Swap(address indexed seller, address indexed buyer, bytes32 salt, address swapper, TMPLSwap);
+
     function fill(TMPLSwap memory swap, bytes32 salt) external payable returns (address) {
         (address payable feeRecipient, uint16 basisPoints) = _platformFeeConfig();
         address a = _deploy(_bytecode(swap), msg.value, salt, FILL.withFeeConfig(feeRecipient, basisPoints));
@@ -44,6 +46,20 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
 
     function swapper(TMPLSwap memory swap, bytes32 salt) external view returns (address) {
         return _swapper(swap, salt);
+    }
+
+    /**
+     * @notice Uses the last block's hash as a salt to predict a swapper address for the swap, and emits a `Swap`
+     * event.
+     * @dev A salt known to an adversary reduces the security of the swapper address to that of collision resistance
+     * (~80 bits) whereas an unknown salt relies on second pre-image resistance (full address space = 160 bits). Using
+     * the last block's hash would require computing a collision in the inter-block period (12s) so is sufficient.
+     */
+    function broadcast(TMPLSwap memory swap) external returns (bytes32, address) {
+        bytes32 salt = blockhash(block.number - 1);
+        address s = _swapper(swap, salt);
+        emit Swap(swap.parties.seller, swap.parties.buyer, salt, s, swap);
+        return (salt, s);
     }
 }
 
