@@ -35,6 +35,39 @@ function _eq(Action a, Action b) pure returns (bool) {
 
 using {_eq as ==} for Action global;
 
+uint256 constant FILLED_ARTIFACT = 0x5f5ffd; // PUSH0 PUSH0 REVERT
+
+bytes32 constant FILLED_CODEHASH = keccak256(abi.encodePacked(uint24(FILLED_ARTIFACT)));
+
+uint256 constant CANCELLED_ARTIFACT = 0x585ffd; // PC(0) PUSH0 REVERT
+
+bytes32 constant CANCELLED_CODEHASH = keccak256(abi.encodePacked(uint24(CANCELLED_ARTIFACT)));
+
+bytes32 constant PENDING_CODEHASH = keccak256("");
+
+enum SwapStatus {
+    Pending,
+    Filled,
+    Cancelled,
+    Invalid
+}
+
+function swapStatus(address swapper) view returns (SwapStatus) {
+    bytes32 h = swapper.codehash;
+    // EIP-1052 differentiates between non-existent and existent-but-codeless accounts. Any prepayment of ETH to the
+    // swapper will move it from former to latter and change the value returned by EXTCODEHASH.
+    if (h == 0 || h == PENDING_CODEHASH) {
+        return SwapStatus.Pending;
+    }
+    if (h == FILLED_CODEHASH) {
+        return SwapStatus.Filled;
+    }
+    if (h == CANCELLED_CODEHASH) {
+        return SwapStatus.Cancelled;
+    }
+    return SwapStatus.Invalid;
+}
+
 /// @dev Thrown if an address other than the selling or buying party attempts to cancel a swap.
 error OnlyPartyCanCancel();
 

@@ -5,7 +5,14 @@ import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 
 import {SWAP2} from "../src/SWAP2.sol";
-import {Parties, PayableParties, Consideration, Disbursement, ISwapperEvents} from "../src/TypesAndConstants.sol";
+import {
+    Parties,
+    PayableParties,
+    Consideration,
+    Disbursement,
+    ISwapperEvents,
+    SwapStatus
+} from "../src/TypesAndConstants.sol";
 
 import {ERC721, IERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
@@ -301,6 +308,10 @@ abstract contract SwapperTestBase is Test, ITestEvents {
         uint256 snap = vm.snapshot();
         _;
         vm.revertTo(snap);
+    }
+
+    function assertEq(SwapStatus a, SwapStatus b, string memory failMsg) internal {
+        assertEq(uint8(a), uint8(b), failMsg);
     }
 }
 
