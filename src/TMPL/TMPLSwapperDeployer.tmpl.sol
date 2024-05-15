@@ -13,11 +13,11 @@ import {OnlyPartyCanCancel, Action, ActionMessageLib, FILL, CANCEL_MSG} from "..
 
 /// @dev Predictor of TMPLSwapper contract addresses.
 contract TMPLSwapperPredictor is ETPredictor {
-    function _swapper(TMPLSwap memory swap, bytes32 salt) internal view returns (address) {
+    function _swapper(TMPLSwap calldata swap, bytes32 salt) internal view returns (address) {
         return _predictDeploymentAddress(_bytecode(swap), salt);
     }
 
-    function _bytecode(TMPLSwap memory swap) internal pure returns (bytes memory) {
+    function _bytecode(TMPLSwap calldata swap) internal pure returns (bytes memory) {
         return abi.encodePacked(type(TMPLSwapper).creationCode, abi.encode(swap));
     }
 }
@@ -26,14 +26,14 @@ contract TMPLSwapperPredictor is ETPredictor {
 abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, SwapperDeployerBase {
     using ActionMessageLib for Action;
 
-    function fill(TMPLSwap memory swap, bytes32 salt) external payable returns (address) {
+    function fill(TMPLSwap calldata swap, bytes32 salt) external payable returns (address) {
         (address payable feeRecipient, uint16 basisPoints) = _platformFeeConfig();
         address a = _deploy(_bytecode(swap), msg.value, salt, FILL.withFeeConfig(feeRecipient, basisPoints));
         emit Filled(a);
         return a;
     }
 
-    function cancel(TMPLSwap memory swap, bytes32 salt) external returns (address) {
+    function cancel(TMPLSwap calldata swap, bytes32 salt) external returns (address) {
         if (msg.sender != swap.parties.seller && msg.sender != swap.parties.buyer) {
             revert OnlyPartyCanCancel();
         }
@@ -42,7 +42,7 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
         return a;
     }
 
-    function swapper(TMPLSwap memory swap, bytes32 salt) external view returns (address) {
+    function swapper(TMPLSwap calldata swap, bytes32 salt) external view returns (address) {
         return _swapper(swap, salt);
     }
 }
