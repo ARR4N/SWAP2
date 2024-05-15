@@ -6,7 +6,6 @@ pragma solidity 0.8.25;
 
 import {TMPLSwap} from "./TMPLSwap.sol";
 
-import {ConstructorArtifacts} from "../ConstructorArtifacts.sol";
 import {ERC721SwapperLib} from "../ERC721SwapperLib.sol";
 import {ET, Message} from "../ET.sol";
 import {SwapperBase} from "../SwapperBase.sol";
@@ -16,6 +15,8 @@ import {
     UnsupportedAction,
     FILL,
     CANCEL,
+    FILLED_ARTIFACT,
+    CANCELLED_ARTIFACT,
     ExcessPlatformFee,
     Disbursement
 } from "../TypesAndConstants.sol";
@@ -23,14 +24,18 @@ import {
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 /// @dev Base contract for a TMPLSwapper implementation.
-abstract contract TMPLSwapperBase is ConstructorArtifacts, ET, SwapperBase {
+abstract contract TMPLSwapperBase is ET, SwapperBase {
     using ActionMessageLib for Message;
 
-    constructor(TMPLSwap memory swap) contractAlwaysRevertsEmpty {
+    constructor(TMPLSwap memory swap) {
         Message message = ET._phoneHome();
         Action action = message.action();
 
+        uint256 codeToDeploy = 0xFE; // INVALID
+
         if (action == FILL) {
+            codeToDeploy = FILLED_ARTIFACT;
+
             ERC721SwapperLib._transfer(swap.offer, _asNonPayableParties(swap.parties));
 
             (address payable feeRecipient, uint16 basisPoints) = message.feeConfig();
@@ -41,12 +46,18 @@ abstract contract TMPLSwapperBase is ConstructorArtifacts, ET, SwapperBase {
 
             _disburseFunds(swap, feeRecipient, fee);
         } else if (action == CANCEL) {
+            codeToDeploy = CANCELLED_ARTIFACT;
             _cancel(swap.parties);
         } else {
             revert UnsupportedAction(action);
         }
 
         assert(_postExecutionInvariantsMet(swap));
+
+        assembly ("memory-safe") {
+            mstore(0, codeToDeploy)
+            return(29, 3)
+        }
     }
 
     function _disburseFunds(TMPLSwap memory, address payable, uint256) internal virtual;
