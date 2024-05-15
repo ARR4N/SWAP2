@@ -20,6 +20,9 @@ contract ERC721SwapperLibTest is Test, ITestEvents {
         Parties memory parties
     ) public {
         vm.assume(parties.seller != parties.buyer);
+        vm.assume(parties.seller != address(0));
+        vm.assume(parties.buyer != address(0));
+
         vm.label(parties.seller, "seller");
         vm.label(parties.buyer, "buyer");
 
