@@ -13,11 +13,11 @@ import {OnlyPartyCanCancel, Action, ActionMessageLib, FILL, CANCEL_MSG} from "..
 
 /// @dev Predictor of TMPLSwapper contract addresses.
 contract TMPLSwapperPredictor is ETPredictor {
-    function _swapper(TMPLSwap memory swap, bytes32 salt) internal view returns (address) {
+    function _swapper(TMPLSwap calldata swap, bytes32 salt) internal view returns (address) {
         return _predictDeploymentAddress(_bytecode(swap), salt);
     }
 
-    function _bytecode(TMPLSwap memory swap) internal pure returns (bytes memory) {
+    function _bytecode(TMPLSwap calldata swap) internal pure returns (bytes memory) {
         return abi.encodePacked(type(TMPLSwapper).creationCode, abi.encode(swap));
     }
 }
@@ -28,14 +28,14 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
 
     event Swap(address indexed seller, address indexed buyer, bytes32 salt, address swapper, TMPLSwap);
 
-    function fill(TMPLSwap memory swap, bytes32 salt) external payable returns (address) {
+    function fill(TMPLSwap calldata swap, bytes32 salt) external payable returns (address) {
         (address payable feeRecipient, uint16 basisPoints) = _platformFeeConfig();
         address a = _deploy(_bytecode(swap), msg.value, salt, FILL.withFeeConfig(feeRecipient, basisPoints));
         emit Filled(a);
         return a;
     }
 
-    function cancel(TMPLSwap memory swap, bytes32 salt) external returns (address) {
+    function cancel(TMPLSwap calldata swap, bytes32 salt) external returns (address) {
         if (msg.sender != swap.parties.seller && msg.sender != swap.parties.buyer) {
             revert OnlyPartyCanCancel();
         }
@@ -44,7 +44,7 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
         return a;
     }
 
-    function swapper(TMPLSwap memory swap, bytes32 salt) external view returns (address) {
+    function swapper(TMPLSwap calldata swap, bytes32 salt) external view returns (address) {
         return _swapper(swap, salt);
     }
 
@@ -55,7 +55,7 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
      * (~80 bits) whereas an unknown salt relies on second pre-image resistance (full address space = 160 bits). Using
      * the last block's hash would require computing a collision in the inter-block period (12s) so is sufficient.
      */
-    function broadcast(TMPLSwap memory swap) external returns (bytes32, address) {
+    function broadcast(TMPLSwap calldata swap) external returns (bytes32, address) {
         bytes32 salt = blockhash(block.number - 1);
         address s = _swapper(swap, salt);
         emit Swap(swap.parties.seller, swap.parties.buyer, salt, s, swap);

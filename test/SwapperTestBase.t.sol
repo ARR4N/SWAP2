@@ -5,7 +5,14 @@ import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 
 import {SWAP2} from "../src/SWAP2.sol";
-import {Parties, PayableParties, Consideration, Disbursement, ISwapperEvents} from "../src/TypesAndConstants.sol";
+import {
+    Parties,
+    PayableParties,
+    Consideration,
+    Disbursement,
+    ISwapperEvents,
+    SwapStatus
+} from "../src/TypesAndConstants.sol";
 
 import {ERC721, IERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
@@ -16,6 +23,10 @@ contract Token is ERC721 {
 
     function mint(address to, uint256 tokenId) external {
         _mint(to, tokenId);
+    }
+
+    function exists(uint256 tokenId) external view returns (bool) {
+        return _ownerOf(tokenId) != address(0);
     }
 }
 
@@ -31,7 +42,7 @@ contract TestableSWAP2 is SWAP2 {
 }
 
 /**
- * @dev SwapperTestBase is the abstract base of all other tests. It defines:
+ * @dev SwapperTestBase is the abstract base of all Swapper tests. It defines:
  *   - A common TestCase struct, useful for fuzzing.
  *   - A set of (virtual) functions that non-abstract test contracts can expect to be present; these are mostly
  *     implemented by NativeTokenTest and ERC20Test.
@@ -180,7 +191,9 @@ abstract contract SwapperTestBase is Test, ITestEvents {
      */
     modifier assumeValidTest(TestCase memory t) {
         {
-            vm.assume(t.seller() != t.buyer());
+            _assumeDistinctAddress(t.seller());
+            _assumeDistinctAddress(t.buyer());
+
             _assumeNonContractWithoutBalance(t.seller());
             _assumeNonContractWithoutBalance(t.buyer());
             _assumeNonContractWithoutBalance(t.caller);
@@ -193,11 +206,11 @@ abstract contract SwapperTestBase is Test, ITestEvents {
             } else if (t.caller == t.buyer()) {
                 vm.label(t.caller, "buyer (swap executor)");
             } else {
+                _assumeDistinctAddress(t.caller);
                 vm.label(t.caller, "swap-executor");
             }
 
-            address rec = t.platformFeeRecipient;
-            vm.assume(rec != t.seller() && rec != t.buyer());
+            _assumeDistinctAddress(t.platformFeeRecipient);
             vm.label(t.platformFeeRecipient, "platform-fee-recipient");
         }
 
@@ -217,18 +230,8 @@ abstract contract SwapperTestBase is Test, ITestEvents {
                 remaining -= amt;
 
                 address to = disburse[i].to;
-                vm.assume(to != t.seller() && to != t.buyer());
                 _assumeNonContractWithoutBalance(to);
-
-                uint256 addr = uint256(uint160(to));
-                bool seen;
-                assembly ("memory-safe") {
-                    seen := tload(addr)
-                }
-                vm.assume(!seen);
-                assembly ("memory-safe") {
-                    tstore(addr, 1)
-                }
+                _assumeDistinctAddress(to);
 
                 ++t._numThirdParty;
             }
@@ -236,12 +239,33 @@ abstract contract SwapperTestBase is Test, ITestEvents {
 
         _;
 
-        for (uint256 i = 0; i < t._thirdParty.length; ++i) {
-            uint256 addr = uint256(uint160(t._thirdParty[i].to));
+        _clearSeenAddresses();
+    }
+
+    uint256[] private _seenAddresses;
+
+    function _assumeDistinctAddress(address a) internal {
+        uint256 addr = uint256(uint160(a));
+        bool seen;
+        assembly ("memory-safe") {
+            seen := tload(addr)
+        }
+        vm.assume(!seen);
+        assembly ("memory-safe") {
+            tstore(addr, 1)
+        }
+
+        _seenAddresses.push(addr);
+    }
+
+    function _clearSeenAddresses() internal {
+        for (uint256 i = 0; i < _seenAddresses.length; ++i) {
+            uint256 a = _seenAddresses[i];
             assembly ("memory-safe") {
-                tstore(addr, 0)
+                tstore(a, 0)
             }
         }
+        _seenAddresses = new uint256[](0);
     }
 
     /// @dev Assumes that the address is not a contract (nor pre-compile) and has zero balance.
@@ -284,6 +308,10 @@ abstract contract SwapperTestBase is Test, ITestEvents {
         uint256 snap = vm.snapshot();
         _;
         vm.revertTo(snap);
+    }
+
+    function assertEq(SwapStatus a, SwapStatus b, string memory failMsg) internal {
+        assertEq(uint8(a), uint8(b), failMsg);
     }
 }
 

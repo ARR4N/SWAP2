@@ -6,7 +6,14 @@ import {console2} from "forge-std/console2.sol";
 import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 
 import {ERC721Token} from "../src/ERC721SwapperLib.sol";
-import {OnlyPartyCanCancel, ExcessPlatformFee, Disbursement, Parties} from "../src/TypesAndConstants.sol";
+import {
+    OnlyPartyCanCancel,
+    ExcessPlatformFee,
+    Disbursement,
+    Parties,
+    SwapStatus,
+    swapStatus
+} from "../src/TypesAndConstants.sol";
 import {ETDeployer} from "../src/ET.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
@@ -43,8 +50,9 @@ abstract contract ERC721ForXTest is SwapperTestBase {
      * @param t Test case from which a swap is defined.
      * @param err If non-empty, expects that a call to _fill(t) reverts with this error. If empty, expects success and a
      * corresponding transfer of the token from `seller` to `buyer`.
+     * @return Swapper address.
      */
-    function _testFill(ERC721TestCase memory t, bytes memory err) internal {
+    function _testFill(ERC721TestCase memory t, bytes memory err) internal returns (address) {
         address swapper = _beforeExecute(t);
 
         TestCase memory test = t.base;
@@ -73,17 +81,20 @@ abstract contract ERC721ForXTest is SwapperTestBase {
             passes ? test.totalForSeller() + _expectedExcessSellerBalanceAfterFill(test) : 0,
             "seller balance"
         );
-        assertEq(_balance(test.platformFeeRecipient), passes ? test.platformFee() : 0);
+        assertEq(_balance(test.platformFeeRecipient), passes ? test.platformFee() : 0, "platform-fee recipient");
         assertEq(_balance(swapper), passes ? 0 : _swapperPrePay(test), "swapper balance");
         assertEq(_balance(address(factory)), 0, "factory balance remains zero");
 
         Disbursement[] memory tP = t.base.consideration().thirdParty;
         for (uint256 i = 0; i < tP.length; ++i) {
-            assertEq(_balance(tP[i].to), passes ? tP[i].amount : 0);
+            assertEq(_balance(tP[i].to), passes ? tP[i].amount : 0, "third-party");
         }
 
         assertEq(swapper.code.length, passes ? 3 : 0, "deployed swapper bytecode length");
+        assertEq(swapStatus(swapper), passes ? SwapStatus.Filled : SwapStatus.Pending, "swap status");
         _afterExecute(test, swapper, passes);
+
+        return swapper;
     }
 
     /// @dev Common setup shared by tests of both fill() and cancel().
@@ -95,6 +106,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
         address swapper = _swapper(t);
         vm.label(swapper, "swapper");
+        assertEq(swapStatus(swapper), SwapStatus.Pending, "pending status before account creation");
 
         vm.assume(
             test.seller() != swapper && test.buyer() != swapper && test.caller != swapper
@@ -104,6 +116,11 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         _approveSwapper(test, tokenId, swapper);
         vm.assume(_balance(swapper) == 0);
         _beforeExecute(test, swapper);
+
+        // In native-token tests _beforeExecute(test, swapper) will create the account by sending a "test transaction"
+        // prepayment. This changes the EXTCODEHASH from 0x00 to keccak256(""), therefore we perform this test despite
+        // having already done it a few lines above.
+        assertEq(swapStatus(swapper), SwapStatus.Pending, "pending status before executing swap");
 
         return swapper;
     }
@@ -115,8 +132,9 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         assumeSufficientPayment(t.base)
         assumeValidPlatformFee(t.base)
         assumeApproving(t.base)
+        returns (address swapper)
     {
-        _testFill(t, "");
+        return _testFill(t, "");
     }
 
     function testNotApproved(ERC721TestCase memory t)
@@ -158,7 +176,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
     }
 
     function testReplayProtection(ERC721TestCase memory t, address replayer) external {
-        testHappyPath(t);
+        address swapper = testHappyPath(t);
 
         TestCase memory test = t.base;
 
@@ -169,6 +187,8 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         vm.expectRevert(ETDeployer.Create2EmptyRevert.selector);
         _replay(t, replayer);
         assertEq(token.ownerOf(t.tokenId), test.seller());
+
+        assertEq(swapStatus(swapper), SwapStatus.Filled, "status after replay attempt");
     }
 
     function testCancel(ERC721TestCase memory t, address vandal, bool asSeller) external assumeValidTest(t.base) {
@@ -184,6 +204,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
             vm.expectRevert(abi.encodeWithSelector(OnlyPartyCanCancel.selector));
             _cancelAs(t, vandal);
             _afterExecute(test, swapper, false);
+            assertEq(swapStatus(swapper), SwapStatus.Pending, "swap pending after vandal attempt to cancel");
         }
 
         {
@@ -197,12 +218,14 @@ abstract contract ERC721ForXTest is SwapperTestBase {
             assertEq(_balance(test.buyer()), expectedBuyerBalance, "buyer balance after cancel");
 
             _afterExecute(test, swapper, true);
+            assertEq(swapStatus(swapper), SwapStatus.Cancelled, "status after cancellation");
         }
 
         {
             vm.expectRevert(abi.encodeWithSelector(ETDeployer.Create2EmptyRevert.selector));
             _replay(t, vandal);
             _afterExecute(test, swapper, true);
+            assertEq(swapStatus(swapper), SwapStatus.Cancelled, "status after replay attempt");
         }
 
         assertEq(token.ownerOf(t.tokenId), test.seller());
