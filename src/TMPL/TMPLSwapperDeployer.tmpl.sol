@@ -26,7 +26,7 @@ contract TMPLSwapperPredictor is ETPredictor {
 abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, SwapperDeployerBase {
     using ActionMessageLib for Action;
 
-    event Swap(address indexed seller, address indexed buyer, bytes32 salt, address swapper, TMPLSwap);
+    event Swap(address indexed swapper, address indexed seller, address indexed buyer, bytes32 salt, TMPLSwap);
 
     function fill(TMPLSwap calldata swap, bytes32 salt) external payable returns (address) {
         (address payable feeRecipient, uint16 basisPoints) = _platformFeeConfig();
@@ -57,9 +57,9 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
      */
     function broadcast(TMPLSwap calldata swap) external returns (bytes32, address) {
         bytes32 salt = blockhash(block.number - 1);
-        address s = _swapper(swap, salt);
-        emit Swap(swap.parties.seller, swap.parties.buyer, salt, s, swap);
-        return (salt, s);
+        address swapper_ = _swapper(swap, salt);
+        emit Swap(swapper_, swap.parties.seller, swap.parties.buyer, salt, swap);
+        return (salt, swapper_);
     }
 }
 

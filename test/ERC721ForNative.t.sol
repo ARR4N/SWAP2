@@ -35,6 +35,16 @@ contract ERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
     }
 
     /// @inheritdoc ERC721ForXTest
+    function _broadcast(ERC721TestCase memory t) internal override returns (bytes32 salt, address swapper) {
+        return factory.broadcast(_asSwap(t));
+    }
+
+    /// @inheritdoc ERC721ForXTest
+    function _encodedSaltAndSwap(ERC721TestCase memory t) internal view override returns (bytes memory) {
+        return abi.encode(t.base.salt, _asSwap(t));
+    }
+
+    /// @inheritdoc ERC721ForXTest
     function _fill(ERC721TestCase memory t) internal override {
         _fill(t, t.base.native.callValue);
     }

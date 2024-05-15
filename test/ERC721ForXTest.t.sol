@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, Vm} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 
@@ -35,6 +35,10 @@ abstract contract ERC721ForXTest is SwapperTestBase {
     /// @dev Returns the predicted address of a swapper for executing the swap defined by the test case.
     function _swapper(ERC721TestCase memory) internal view virtual returns (address);
 
+    function _broadcast(ERC721TestCase memory) internal virtual returns (bytes32 salt, address swapper);
+
+    function _encodedSaltAndSwap(ERC721TestCase memory) internal view virtual returns (bytes memory);
+
     /// @dev Fills the swap defined by the test case.
     function _fill(ERC721TestCase memory) internal virtual;
 
@@ -57,7 +61,6 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
         TestCase memory test = t.base;
         uint256 tokenId = t.tokenId;
-        _setPlatformFee(test);
 
         bool passes = err.length == 0;
 
@@ -121,6 +124,8 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         // prepayment. This changes the EXTCODEHASH from 0x00 to keccak256(""), therefore we perform this test despite
         // having already done it a few lines above.
         assertEq(swapStatus(swapper), SwapStatus.Pending, "pending status before executing swap");
+
+        _setPlatformFee(t.base);
 
         return swapper;
     }
@@ -189,6 +194,26 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         assertEq(token.ownerOf(t.tokenId), test.seller());
 
         assertEq(swapStatus(swapper), SwapStatus.Filled, "status after replay attempt");
+    }
+
+    function testBroadcast(ERC721TestCase memory t) external assumeValidTest(t.base) {
+        vm.recordLogs();
+        (bytes32 salt, address swapper) = _broadcast(t);
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+
+        assertEq(logs.length, 1, "# logged events");
+        assertEq(logs[0].topics[1], bytes32(abi.encode(swapper)), "logged and returned swapper addresses match");
+        assertEq(logs[0].topics[2], bytes32(abi.encode(t.base.seller())), "seller logged");
+        assertEq(logs[0].topics[3], bytes32(abi.encode(t.base.buyer())), "buyer logged");
+
+        assertEq(bytes32(logs[0].data), salt, "logged and returned salts match");
+        t.base.salt = salt;
+        assertEq(logs[0].data, _encodedSaltAndSwap(t), "logged data is salt-prefixed, abi-encoded swap");
+
+        assertEq(swapStatus(swapper), SwapStatus.Pending, "initial pending status of broadcast swapper");
+        _clearSeenAddresses(); // testHappyPath() is also modified by assumeValidTest(), which assumes distinct addresses
+        testHappyPath(t);
+        assertEq(swapStatus(swapper), SwapStatus.Filled, "broadcast swapper filled");
     }
 
     function testCancel(ERC721TestCase memory t, address vandal, bool asSeller) external assumeValidTest(t.base) {
