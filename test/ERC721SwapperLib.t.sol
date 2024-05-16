@@ -47,13 +47,19 @@ contract ERC721SwapperLibTest is Test, ITestEvents {
             }
         }
 
+        _assertOwner(tokens, parties.seller);
+
         vm.startPrank(parties.seller);
         ERC721SwapperLib._transfer(tokens, parties);
         vm.stopPrank();
 
+        _assertOwner(tokens, parties.buyer);
+    }
+
+    function _assertOwner(MultiERC721Token[] memory tokens, address owner) internal {
         for (uint256 i = 0; i < tokens.length; ++i) {
             for (uint256 j = 0; j < tokens[i].ids.length; ++j) {
-                assertEq(tokens[i].addr.ownerOf(tokens[i].ids[j]), parties.buyer);
+                assertEq(tokens[i].addr.ownerOf(tokens[i].ids[j]), owner);
             }
         }
     }
