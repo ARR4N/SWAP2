@@ -35,7 +35,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
     /// @dev Returns the predicted address of a swapper for executing the swap defined by the test case.
     function _swapper(ERC721TestCase memory) internal view virtual returns (address);
 
-    function _broadcast(ERC721TestCase memory) internal virtual returns (bytes32 salt, address swapper);
+    function _propose(ERC721TestCase memory) internal virtual returns (bytes32 salt, address swapper);
 
     function _encodedSwapAndSalt(ERC721TestCase memory, bytes32) internal view virtual returns (bytes memory);
 
@@ -196,7 +196,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         assertEq(swapStatus(swapper), SwapStatus.Filled, "status after replay attempt");
     }
 
-    function testBroadcast(ERC721TestCase memory t)
+    function testPropose(ERC721TestCase memory t)
         external
         assumeValidTest(t.base)
         assumePaymentsValid(t.base)
@@ -205,7 +205,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         assumeApproving(t.base)
     {
         vm.recordLogs();
-        (bytes32 salt, address swapper) = _broadcast(t);
+        (bytes32 salt, address swapper) = _propose(t);
 
         {
             Vm.Log[] memory logs = vm.getRecordedLogs();
@@ -217,7 +217,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         }
 
         {
-            assertEq(swapStatus(swapper), SwapStatus.Pending, "initial pending status of broadcast swapper");
+            assertEq(swapStatus(swapper), SwapStatus.Pending, "initial pending status of proposed swapper");
 
             t.base.salt = salt;
             _beforeExecute(t);
@@ -228,7 +228,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
             _fill(t);
             vm.stopPrank();
 
-            assertEq(swapStatus(swapper), SwapStatus.Filled, "broadcast swapper filled");
+            assertEq(swapStatus(swapper), SwapStatus.Filled, "proposed swapper filled");
         }
     }
 

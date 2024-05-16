@@ -26,7 +26,7 @@ contract TMPLSwapperPredictor is ETPredictor {
 abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, SwapperDeployerBase {
     using ActionMessageLib for Action;
 
-    event Swap(address indexed swapper, address indexed seller, address indexed buyer, TMPLSwap, bytes32 salt);
+    event Proposal(address indexed swapper, address indexed seller, address indexed buyer, TMPLSwap, bytes32 salt);
 
     function fill(TMPLSwap calldata swap, bytes32 salt) external payable returns (address) {
         (address payable feeRecipient, uint16 basisPoints) = _platformFeeConfig();
@@ -49,16 +49,22 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
     }
 
     /**
-     * @notice Uses the last block's hash as a salt to predict a swapper address for the swap, and emits a `Swap`
-     * event.
+     * @notice "Announces" a propsed swap (in the form of a `Proposal` event), using the last block's hash as the salt
+     * for the predicted swapper address.
+     * @dev This is an optional step and swaps will function without prior proposal, but users SHOULD use this function
+     * as it provides two security benefits: (i) a trusted means by which to safely determine the address they need to
+     * approve to transfer their assets; and (ii) increasing the security level of the swapper address from 80 to 160
+     * bits.
      * @dev A salt known to an adversary reduces the security of the swapper address to that of collision resistance
      * (~80 bits) whereas an unknown salt relies on second pre-image resistance (full address space = 160 bits). Using
      * the last block's hash would require computing a collision in the inter-block period (12s) so is sufficient.
+     * @dev This function MAY be called on a different chain to the one on which the swap will occur, provided that the
+     * deployer contract has the same address.
      */
-    function broadcast(TMPLSwap calldata swap) external returns (bytes32, address) {
+    function propose(TMPLSwap calldata swap) external returns (bytes32, address) {
         bytes32 salt = blockhash(block.number - 1);
         address swapper_ = _swapper(swap, salt);
-        emit Swap(swapper_, swap.parties.seller, swap.parties.buyer, swap, salt);
+        emit Proposal(swapper_, swap.parties.seller, swap.parties.buyer, swap, salt);
         return (salt, swapper_);
     }
 }

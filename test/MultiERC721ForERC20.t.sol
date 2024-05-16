@@ -49,8 +49,8 @@ contract MultiERC721ForERC20Test is ERC721ForXTest, ERC20Test {
     }
 
     /// @inheritdoc ERC721ForXTest
-    function _broadcast(ERC721TestCase memory t) internal override returns (bytes32 salt, address swapper) {
-        return factory.broadcast(_asSwap(t));
+    function _propose(ERC721TestCase memory t) internal override returns (bytes32 salt, address swapper) {
+        return factory.propose(_asSwap(t));
     }
 
     /// @inheritdoc ERC721ForXTest
