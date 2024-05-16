@@ -40,8 +40,8 @@ contract ERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
     }
 
     /// @inheritdoc ERC721ForXTest
-    function _encodedSaltAndSwap(ERC721TestCase memory t) internal view override returns (bytes memory) {
-        return abi.encode(t.base.salt, _asSwap(t));
+    function _encodedSwapAndSalt(ERC721TestCase memory t, bytes32 salt) internal view override returns (bytes memory) {
+        return abi.encode(_asSwap(t), salt);
     }
 
     /// @inheritdoc ERC721ForXTest
