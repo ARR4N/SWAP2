@@ -14,7 +14,7 @@ ERC721ForNativeTest:testInsufficientBalance((((address,address),address,uint16,u
 ERC721ForNativeTest:testNotApproved((((address,address),address,uint16,uint256,(address,uint256)[5],uint256,uint256,uint8,address,bytes32,(uint128,uint128,uint128),(uint256,uint256)),uint256)) (runs: 257, μ: 253555, ~: 247049)
 ERC721ForNativeTest:testPropose((((address,address),address,uint16,uint256,(address,uint256)[5],uint256,uint256,uint8,address,bytes32,(uint128,uint128,uint128),(uint256,uint256)),uint256)) (runs: 259, μ: 400428, ~: 397386)
 ERC721ForNativeTest:testReplayProtection((((address,address),address,uint16,uint256,(address,uint256)[5],uint256,uint256,uint8,address,bytes32,(uint128,uint128,uint128),(uint256,uint256)),uint256),address) (runs: 260, μ: 8937393460516574417, ~: 8937393460516579255)
-ERC721SwapperLibTest:testMultiERC721TokenTransfer(address[5],uint256[5][5],(address,address)) (runs: 262, μ: 1058029, ~: 1058029)
+ERC721SwapperLibTest:testMultiERC721TokenTransfer(address[5],uint256[5][5],(address,address)) (runs: 263, μ: 1093688, ~: 1093688)
 ETTest:testArbitraryRevert(bytes32) (runs: 266, μ: 43770, ~: 43770)
 ETTest:testPhoneHome(bytes32,bytes32) (runs: 266, μ: 52212, ~: 52212)
 ETTest:testRecreateRevert(bytes32,bytes32,bytes32[5]) (runs: 266, μ: 9223372028659688754, ~: 9223372028659687920)
