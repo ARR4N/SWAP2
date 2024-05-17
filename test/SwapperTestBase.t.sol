@@ -117,8 +117,8 @@ abstract contract SwapperTestBase is Test, ITestEvents {
         _setPlatformFee(t.platformFeeRecipient, t.platformFeeBasisPoints);
     }
 
-    function _setPlatformFee(address payable recipient, uint16 basisPoints) internal {
-        mutableFactory.setPlatformFee(recipient, basisPoints);
+    function _setPlatformFee(address recipient, uint16 basisPoints) internal {
+        mutableFactory.setPlatformFee(payable(recipient), basisPoints);
     }
 
     /// @dev Returns the balance of the address, denominated in the payment currency (native or specific ERC20).

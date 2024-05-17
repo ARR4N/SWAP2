@@ -75,9 +75,7 @@ contract ERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
 
         uint256 tokenId = 17300;
         uint256 consideration = 2.55 ether;
-        address payable feesTo = payable(makeAddr("feeRecipient"));
-        vm.deal(feesTo, 1 wei);
-        _setPlatformFee(feesTo, 250);
+        _setPlatformFee(0x0000a26b00c1F0DF003000390027140000fAa719, 250); // same recipient as Seaport
 
         ERC721ForNativeSwap memory swap = ERC721ForNativeSwap({
             parties: PayableParties({
