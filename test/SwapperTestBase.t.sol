@@ -31,7 +31,7 @@ contract Token is ERC721 {
 }
 
 interface ITestEvents is ISwapperEvents {
-    event Transfer(address indexed from, address indexed to, uint256 indexed tokeinId);
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 }
 
 contract TestableSWAP2 is SWAP2 {
