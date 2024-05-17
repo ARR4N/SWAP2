@@ -111,6 +111,7 @@ contract ERC721ForERC20Test is ERC721ForXTest, ERC20Test {
             factory.fill(swap, salt);
             gasUsed = gas - gasleft();
 
+            assertEq(swap.offer.addr.ownerOf(tokenId), swap.parties.buyer);
             assertEq(swap.currency.balanceOf(swap.parties.seller), sellerBalance + swap.consideration.total);
 
             vm.revertTo(snap);
@@ -128,10 +129,11 @@ contract ERC721ForERC20Test is ERC721ForXTest, ERC20Test {
             sudoGasUsed = gas - gasleft();
             require(success, "original simulation failed");
 
+            assertEq(swap.offer.addr.ownerOf(tokenId), swap.parties.buyer);
             assertEq(swap.currency.balanceOf(swap.parties.seller), sellerBalance + swap.consideration.total);
         }
 
-        console2.log(gasUsed, sudoGasUsed, sudoGasUsed - gasUsed);
         assertLt(gasUsed, sudoGasUsed, "gas usage");
+        console2.log(gasUsed, sudoGasUsed, sudoGasUsed - gasUsed);
     }
 }

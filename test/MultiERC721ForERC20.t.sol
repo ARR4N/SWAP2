@@ -148,7 +148,7 @@ contract MultiERC721ForERC20Test is ERC721ForXTest, ERC20Test {
             assertEq(swap.currency.balanceOf(swap.parties.seller), sellerBalance + swap.consideration.total);
         }
 
-        console2.log(gasUsed, sudoGasUsed, sudoGasUsed - gasUsed);
         assertLt(gasUsed, sudoGasUsed, "gas usage");
+        console2.log(gasUsed, sudoGasUsed, sudoGasUsed - gasUsed);
     }
 }

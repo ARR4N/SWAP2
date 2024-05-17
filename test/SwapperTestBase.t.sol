@@ -114,7 +114,11 @@ abstract contract SwapperTestBase is Test, ITestEvents {
 
     /// @dev Sets the platform-fee config to the parameters provided in the test case.
     function _setPlatformFee(TestCase memory t) internal {
-        mutableFactory.setPlatformFee(t.platformFeeRecipient, t.platformFeeBasisPoints);
+        _setPlatformFee(t.platformFeeRecipient, t.platformFeeBasisPoints);
+    }
+
+    function _setPlatformFee(address payable recipient, uint16 basisPoints) internal {
+        mutableFactory.setPlatformFee(recipient, basisPoints);
     }
 
     /// @dev Returns the balance of the address, denominated in the payment currency (native or specific ERC20).
