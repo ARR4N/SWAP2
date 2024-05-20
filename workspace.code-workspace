@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"solidity.formatter": "forge",
+		"files.associations": {
+			"*.sol.tmpl": "solidity",
+		},
+	},
+}
