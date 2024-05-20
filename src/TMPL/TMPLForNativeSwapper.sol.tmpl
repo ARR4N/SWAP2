@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.8.25;
+
+import {TMPLSwap as Swap} from "./TMPLSwap.sol";
+import {TMPLSwapperBase} from "./TMPLSwapperBase.gen.sol";
+
+import {NativeTokenConsideration} from "../NativeTokenConsideration.sol";
+import {SwapperBase} from "../SwapperBase.sol";
+import {PayableParties} from "../TypesAndConstants.sol";
+
+contract TMPLSwapper is TMPLSwapperBase, NativeTokenConsideration {
+    constructor(Swap memory swap) payable TMPLSwapperBase(swap) {}
+
+    function _disburseFunds(Swap memory swap, address payable feeRecipient, uint256 fee) internal override {
+        NativeTokenConsideration._disburseFunds(swap.parties, swap.consideration, feeRecipient, fee);
+    }
+
+    function _cancel(PayableParties memory p) internal override(SwapperBase, NativeTokenConsideration) {
+        NativeTokenConsideration._cancel(p);
+    }
+
+    function _postExecutionInvariantsMet(Swap memory) internal view override returns (bool) {
+        return NativeTokenConsideration._postExecutionInvariantsMet();
+    }
+}

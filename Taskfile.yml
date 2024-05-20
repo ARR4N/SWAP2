@@ -8,13 +8,24 @@ tasks:
     dir: "./src/"
     cmds:
       - mkdir -p {{.TYPE}}
-      - < TMPL/TMPLSwapperDeployer.tmpl.sol sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}SwapperDeployer.gen.sol
-      - < TMPL/TMPLSwapperBase.tmpl.sol sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}SwapperBase.gen.sol
+      - < TMPL/TMPLSwapperDeployer.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}SwapperDeployer.gen.sol
+      - < TMPL/TMPLSwapperBase.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}SwapperBase.gen.sol
+
+  _generateSwapperForNative:
+    internal: true
+    dir: "./src/"
+    cmds:
+      - mkdir -p {{.TYPE}}
+      - < TMPL/TMPLForNativeSwapper.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}Swapper.gen.sol
 
   generateImports:
     cmds:
       - for: ['ERC721ForNative', 'ERC721ForERC20', 'MultiERC721ForNative', 'MultiERC721ForERC20', 'TMPL']
         task: _generateImports
+        vars:
+          TYPE: '{{.ITEM}}'
+      - for: ['ERC721ForNative', 'MultiERC721ForNative']
+        task: _generateSwapperForNative
         vars:
           TYPE: '{{.ITEM}}'
 
