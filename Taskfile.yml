@@ -8,21 +8,22 @@ tasks:
     dir: "./src/"
     cmds:
       - mkdir -p {{.TYPE}}
-      - < TMPL/TMPLSwapperDeployer.tmpl.sol sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}SwapperDeployer.gen.sol
-      - < TMPL/TMPLSwapperBase.tmpl.sol sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}SwapperBase.gen.sol
+      - < TMPL/TMPLSwapperDeployer.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}SwapperDeployer.gen.sol
+      - < TMPL/TMPLSwapperBase.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}SwapperBase.gen.sol
+      - < TMPL/TMPLFor{{.CONSIDERATION}}Swapper.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}Swapper.gen.sol
 
   generateImports:
     cmds:
-      - for: ['ERC721ForNative', 'ERC721ForERC20', 'MultiERC721ForNative', 'MultiERC721ForERC20', 'TMPL']
+      - for: ['ERC721ForNative', 'MultiERC721ForNative']
         task: _generateImports
         vars:
           TYPE: '{{.ITEM}}'
-
-  generateImportsForExperimental:
-    cmds:
-      - task: _generateImports
+          CONSIDERATION: 'Native'
+      - for: ['ERC721ForERC20', 'MultiERC721ForERC20', 'TMPL'] # TMPL is arbitrarily ERC20, to demonstrate the `currency` field
+        task: _generateImports
         vars:
-          TYPE: 'Experimental'
+          TYPE: '{{.ITEM}}'
+          CONSIDERATION: 'ERC20'
 
   generateSwapStructBoilerplate:
     dir: "./src/"
@@ -30,20 +31,12 @@ tasks:
       - test ! -e {{.TYPE}}/{{.TYPE}}Swap.sol
     cmds:
       - < TMPL/TMPLSwap.sol sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}Swap.sol
-
-  generateSwapperBoilerplate:
-    dir: "./src/"
-    preconditions:
-      - test ! -e {{.TYPE}}/{{.TYPE}}Swapper.sol
-    cmds:
-      - < TMPL/TMPLSwapper.sol sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}Swapper.sol
           
   generateBoilerplate:
     dir: "./src/"
     cmds:
       - mkdir -p {{.TYPE}}
       - task: generateSwapStructBoilerplate
-      - task: generateSwapperBoilerplate
 
   default:
     cmds:

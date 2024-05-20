@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.25;
 
-import {ERC721ForERC20Swap as Swap} from "./ERC721ForERC20Swap.sol";
-import {ERC721ForERC20SwapperBase} from "./ERC721ForERC20SwapperBase.gen.sol";
+import {TMPLSwap as Swap} from "./TMPLSwap.sol";
+import {TMPLSwapperBase} from "./TMPLSwapperBase.gen.sol";
 
 import {ERC20Consideration} from "../ERC20Consideration.sol";
 
-contract ERC721ForERC20Swapper is ERC721ForERC20SwapperBase, ERC20Consideration {
-    constructor(Swap memory swap) ERC721ForERC20SwapperBase(swap) {}
+contract TMPLSwapper is TMPLSwapperBase, ERC20Consideration {
+    constructor(Swap memory swap) TMPLSwapperBase(swap) {}
 
     function _disburseFunds(Swap memory swap, address payable feeRecipient, uint256 fee) internal override {
         ERC20Consideration._disburseFunds(swap.parties, swap.consideration, swap.currency, feeRecipient, fee);

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.25;
 
-import {ERC721ForNativeSwap as Swap} from "./ERC721ForNativeSwap.sol";
-import {ERC721ForNativeSwapperBase} from "./ERC721ForNativeSwapperBase.gen.sol";
+import {TMPLSwap as Swap} from "./TMPLSwap.sol";
+import {TMPLSwapperBase} from "./TMPLSwapperBase.gen.sol";
 
 import {NativeTokenConsideration} from "../NativeTokenConsideration.sol";
 import {SwapperBase} from "../SwapperBase.sol";
 import {PayableParties} from "../TypesAndConstants.sol";
 
-contract ERC721ForNativeSwapper is ERC721ForNativeSwapperBase, NativeTokenConsideration {
-    constructor(Swap memory swap) payable ERC721ForNativeSwapperBase(swap) {}
+contract TMPLSwapper is TMPLSwapperBase, NativeTokenConsideration {
+    constructor(Swap memory swap) payable TMPLSwapperBase(swap) {}
 
     function _disburseFunds(Swap memory swap, address payable feeRecipient, uint256 fee) internal override {
         NativeTokenConsideration._disburseFunds(swap.parties, swap.consideration, feeRecipient, fee);
