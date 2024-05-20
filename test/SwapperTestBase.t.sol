@@ -34,13 +34,6 @@ interface ITestEvents is ISwapperEvents {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 }
 
-contract TestableSWAP2 is SWAP2 {
-    function setPlatformFee(address payable recipient, uint16 basisPoints) external {
-        feeConfig.recipient = recipient;
-        feeConfig.basisPoints = basisPoints;
-    }
-}
-
 /**
  * @dev SwapperTestBase is the abstract base of all Swapper tests. It defines:
  *   - A common TestCase struct, useful for fuzzing.
@@ -53,12 +46,13 @@ abstract contract SwapperTestBase is Test, ITestEvents {
     using SwapperTestLib for TestCase;
 
     SWAP2 public factory;
-    TestableSWAP2 public mutableFactory;
     Token public token;
 
+    /// @dev Initial owner of the SWAP2 factory.
+    address immutable owner = makeAddr("owner");
+
     function setUp() public virtual {
-        mutableFactory = new TestableSWAP2();
-        factory = mutableFactory;
+        factory = new SWAP2(owner);
         vm.label(address(factory), "SWAP2");
         token = new Token();
         vm.label(address(token), "FakeERC721");
@@ -112,7 +106,8 @@ abstract contract SwapperTestBase is Test, ITestEvents {
 
     /// @dev Sets the platform-fee config to the parameters provided in the test case.
     function _setPlatformFee(TestCase memory t) internal {
-        mutableFactory.setPlatformFee(t.platformFeeRecipient, t.platformFeeBasisPoints);
+        vm.prank(factory.owner());
+        factory.setPlatformFee(t.platformFeeRecipient, t.platformFeeBasisPoints);
     }
 
     /// @dev Returns the balance of the address, denominated in the payment currency (native or specific ERC20).
