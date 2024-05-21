@@ -16,6 +16,7 @@ import {
 
 import {ERC721, IERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract Token is ERC721 {
@@ -28,17 +29,32 @@ contract Token is ERC721 {
     function exists(uint256 tokenId) external view returns (bool) {
         return _ownerOf(tokenId) != address(0);
     }
+
+    /**
+     * @dev If non-zero, this address is called after transferFrom() to enable testing of reentrancy. Although an attack
+     * would typically be performed by a Party, the token transfer is the only common function call in all tests so is
+     * the cleanest way to insert a reentrancy hook.
+     */
+    address private _callPostTransfer;
+
+    bytes private _postTransferCallData;
+
+    function setPostTransferCall(address a, bytes calldata data) public {
+        _callPostTransfer = a;
+        _postTransferCallData = data;
+    }
+
+    function transferFrom(address from, address to, uint256 tokenId) public override {
+        super.transferFrom(from, to, tokenId);
+
+        if (_callPostTransfer != address(0)) {
+            Address.functionCall(_callPostTransfer, _postTransferCallData);
+        }
+    }
 }
 
 interface ITestEvents is ISwapperEvents {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-}
-
-contract TestableSWAP2 is SWAP2 {
-    function setPlatformFee(address payable recipient, uint16 basisPoints) external {
-        feeConfig.recipient = recipient;
-        feeConfig.basisPoints = basisPoints;
-    }
 }
 
 /**
@@ -53,13 +69,14 @@ abstract contract SwapperTestBase is Test, ITestEvents {
     using SwapperTestLib for TestCase;
 
     SWAP2 public factory;
-    TestableSWAP2 public mutableFactory;
     Token public token;
 
+    /// @dev Initial owner of the SWAP2 factory.
+    address immutable owner = makeAddr("owner");
+
     function setUp() public virtual {
-        mutableFactory = new TestableSWAP2();
-        mutableFactory.setPlatformFee(payable(makeAddr("feeRecipient")), 0);
-        factory = mutableFactory;
+        factory = new SWAP2(owner);
+        _setPlatformFee(payable(makeAddr("feeRecipient")), 0);
         vm.label(address(factory), "SWAP2");
 
         token = new Token();
@@ -118,7 +135,8 @@ abstract contract SwapperTestBase is Test, ITestEvents {
     }
 
     function _setPlatformFee(address recipient, uint16 basisPoints) internal {
-        mutableFactory.setPlatformFee(payable(recipient), basisPoints);
+        vm.prank(factory.owner());
+        factory.setPlatformFee(payable(recipient), basisPoints);
     }
 
     /// @dev Returns the balance of the address, denominated in the payment currency (native or specific ERC20).

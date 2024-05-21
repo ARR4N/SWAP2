@@ -7,8 +7,9 @@ import {ERC721ForXTest} from "./ERC721ForXTest.t.sol";
 import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 import {ERC20Test} from "./ERC20Test.t.sol";
 
-import {MultiERC721Token, IERC721} from "../src/ERC721SwapperLib.sol";
+import {ERC721TransferLib, IERC721} from "../src/ERC721TransferLib.sol";
 import {MultiERC721ForERC20Swap, IERC20} from "../src/MultiERC721ForERC20/MultiERC721ForERC20Swap.sol";
+import {MultiERC721ForERC20SwapperDeployer} from "../src/MultiERC721ForERC20/MultiERC721ForERC20SwapperDeployer.gen.sol";
 import {InsufficientBalance, Consideration, Disbursement, Parties} from "../src/TypesAndConstants.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
@@ -30,7 +31,7 @@ contract MultiERC721ForERC20Test is ERC721ForXTest, ERC20Test {
      * defined by ERC721ForXTest.
      */
     function _asSwap(ERC721TestCase memory t) private view returns (MultiERC721ForERC20Swap memory) {
-        MultiERC721Token[] memory offer = new MultiERC721Token[](1);
+        ERC721TransferLib.MultiERC721Token[] memory offer = new ERC721TransferLib.MultiERC721Token[](1);
         offer[0].addr = token;
         offer[0].ids = new uint256[](1);
         offer[0].ids[0] = t.tokenId;
@@ -59,6 +60,11 @@ contract MultiERC721ForERC20Test is ERC721ForXTest, ERC20Test {
     }
 
     /// @inheritdoc ERC721ForXTest
+    function _fillSelector() internal pure override returns (bytes4) {
+        return MultiERC721ForERC20SwapperDeployer.fill.selector;
+    }
+
+    /// @inheritdoc ERC721ForXTest
     function _fill(ERC721TestCase memory t) internal override {
         factory.fill(_asSwap(t), t.base.salt);
     }
@@ -83,7 +89,7 @@ contract MultiERC721ForERC20Test is ERC721ForXTest, ERC20Test {
 
         // https://etherscan.io/tx/0xe2caa083588dd7ba90f7d740813731aebc8c1146353e4d6be90574d8ca7ed189
 
-        MultiERC721Token[] memory offer = new MultiERC721Token[](2);
+        ERC721TransferLib.MultiERC721Token[] memory offer = new ERC721TransferLib.MultiERC721Token[](2);
 
         offer[0].addr = IERC721(0x99a9B7c1116f9ceEB1652de04d5969CcE509B069);
         offer[0].ids = new uint256[](4);

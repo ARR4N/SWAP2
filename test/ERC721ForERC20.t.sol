@@ -7,8 +7,9 @@ import {ERC721ForXTest} from "./ERC721ForXTest.t.sol";
 import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 import {ERC20Test} from "./ERC20Test.t.sol";
 
-import {ERC721Token, IERC721} from "../src/ERC721SwapperLib.sol";
+import {ERC721TransferLib, IERC721} from "../src/ERC721TransferLib.sol";
 import {ERC721ForERC20Swap, IERC20} from "../src/ERC721ForERC20/ERC721ForERC20Swap.sol";
+import {ERC721ForERC20SwapperDeployer} from "../src/ERC721ForERC20/ERC721ForERC20SwapperDeployer.gen.sol";
 import {InsufficientBalance, Consideration, Disbursement, Parties} from "../src/TypesAndConstants.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
@@ -29,7 +30,7 @@ contract ERC721ForERC20Test is ERC721ForXTest, ERC20Test {
     function _asSwap(ERC721TestCase memory t) private view returns (ERC721ForERC20Swap memory) {
         return ERC721ForERC20Swap({
             parties: t.base.parties,
-            offer: ERC721Token({addr: token, id: t.tokenId}),
+            offer: ERC721TransferLib.ERC721Token({addr: token, id: t.tokenId}),
             consideration: t.base.consideration(),
             currency: currency
         });
@@ -48,6 +49,11 @@ contract ERC721ForERC20Test is ERC721ForXTest, ERC20Test {
     /// @inheritdoc ERC721ForXTest
     function _encodedSwapAndSalt(ERC721TestCase memory t, bytes32 salt) internal view override returns (bytes memory) {
         return abi.encode(_asSwap(t), salt);
+    }
+
+    /// @inheritdoc ERC721ForXTest
+    function _fillSelector() internal pure override returns (bytes4) {
+        return ERC721ForERC20SwapperDeployer.fill.selector;
     }
 
     /// @inheritdoc ERC721ForXTest
@@ -82,7 +88,7 @@ contract ERC721ForERC20Test is ERC721ForXTest, ERC20Test {
                 seller: 0xe7967e0ec15CB48939Fcf0BC5764c2a634349eCB,
                 buyer: 0x6414258EE299B740C19a11B938AFe30A373d1AFd
             }),
-            offer: ERC721Token({addr: IERC721(0x12F28E2106CE8Fd8464885B80EA865e98b465149), id: tokenId}),
+            offer: ERC721TransferLib.ERC721Token({addr: IERC721(0x12F28E2106CE8Fd8464885B80EA865e98b465149), id: tokenId}),
             consideration: Consideration({thirdParty: new Disbursement[](0), maxPlatformFee: 0, total: 36000000000000000000}),
             currency: IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2) // weth
         });
