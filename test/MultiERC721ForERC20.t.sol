@@ -9,6 +9,7 @@ import {ERC20Test} from "./ERC20Test.t.sol";
 
 import {MultiERC721Token} from "../src/ERC721SwapperLib.sol";
 import {MultiERC721ForERC20Swap, IERC20} from "../src/MultiERC721ForERC20/MultiERC721ForERC20Swap.sol";
+import {MultiERC721ForERC20SwapperDeployer} from "../src/MultiERC721ForERC20/MultiERC721ForERC20SwapperDeployer.gen.sol";
 import {InsufficientBalance, Disbursement, Parties} from "../src/TypesAndConstants.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
@@ -56,6 +57,11 @@ contract MultiERC721ForERC20Test is ERC721ForXTest, ERC20Test {
     /// @inheritdoc ERC721ForXTest
     function _encodedSwapAndSalt(ERC721TestCase memory t, bytes32 salt) internal view override returns (bytes memory) {
         return abi.encode(_asSwap(t), salt);
+    }
+
+    /// @inheritdoc ERC721ForXTest
+    function _fillSelector() internal pure override returns (bytes4) {
+        return MultiERC721ForERC20SwapperDeployer.fill.selector;
     }
 
     /// @inheritdoc ERC721ForXTest
