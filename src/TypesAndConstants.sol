@@ -5,6 +5,59 @@ pragma solidity ^0.8.24;
 import {Message} from "./ET.sol";
 
 /**
+ * ===================
+ *
+ * <T>Swap field types
+ *
+ * ===================
+ */
+
+/// @dev Parties involved in a swap. The `buyer` pays `Consideration` that the `seller` (partly) receives.
+struct Parties {
+    address seller;
+    address buyer;
+}
+
+/// @dev Substitute for `Parties` when `Consideration` is denoted in the chain's native token.
+struct PayableParties {
+    address payable seller;
+    address payable buyer;
+}
+
+/// @dev Part of `Consideration` sent to a party other than the `seller` and the platform-fee recipient.
+struct Disbursement {
+    address to;
+    uint256 amount;
+}
+
+/**
+ * @dev Fungible payment, denoted in either native token or an ERC20 (as denoted in a <T>Swap). While the `buyer` of the
+ * `[Payable]Parties` is responsible for payment of `total`, the `seller` will only receive the difference between
+ * `total` and the sum of `thirdParty` + platform-fee amounts.
+ * @dev As all fields in a <T>Swap struct are immutable (otherwise the swapper address changes), the platform fee is
+ * denoted as an upper bound to allow it to be modified in favour of the `seller`.
+ */
+struct Consideration {
+    Disbursement[] thirdParty;
+    uint256 maxPlatformFee;
+    uint256 total;
+}
+
+/**
+ * ======
+ *
+ * Events
+ *
+ * ======
+ */
+
+/// @dev Events emitted by <T>SwapperDeployer contracts.
+interface ISwapperEvents {
+    event Filled(address swapper);
+    event Cancelled(address swapper);
+}
+
+/**
  * =======
  *
  * Actions
@@ -136,29 +189,3 @@ error InsufficientBalance(uint256 actual, uint256 expected);
 
 /// @dev Thrown if the platform fee is greater than the threshold in the swap struct.
 error ExcessPlatformFee(uint256 fee, uint256 max);
-
-struct Parties {
-    address seller;
-    address buyer;
-}
-
-struct PayableParties {
-    address payable seller;
-    address payable buyer;
-}
-
-struct Disbursement {
-    address to;
-    uint256 amount;
-}
-
-struct Consideration {
-    Disbursement[] thirdParty;
-    uint256 maxPlatformFee;
-    uint256 total;
-}
-
-interface ISwapperEvents {
-    event Filled(address swapper);
-    event Cancelled(address swapper);
-}
