@@ -7,7 +7,7 @@ import {ERC721ForXTest} from "./ERC721ForXTest.t.sol";
 import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 import {ERC20Test} from "./ERC20Test.t.sol";
 
-import {MultiERC721Token} from "../src/ERC721TransferLib.sol";
+import {ERC721TransferLib} from "../src/ERC721TransferLib.sol";
 import {MultiERC721ForERC20Swap, IERC20} from "../src/MultiERC721ForERC20/MultiERC721ForERC20Swap.sol";
 import {MultiERC721ForERC20SwapperDeployer} from "../src/MultiERC721ForERC20/MultiERC721ForERC20SwapperDeployer.gen.sol";
 import {InsufficientBalance, Disbursement, Parties} from "../src/TypesAndConstants.sol";
@@ -31,7 +31,7 @@ contract MultiERC721ForERC20Test is ERC721ForXTest, ERC20Test {
      * defined by ERC721ForXTest.
      */
     function _asSwap(ERC721TestCase memory t) private view returns (MultiERC721ForERC20Swap memory) {
-        MultiERC721Token[] memory offer = new MultiERC721Token[](1);
+        ERC721TransferLib.MultiERC721Token[] memory offer = new ERC721TransferLib.MultiERC721Token[](1);
         offer[0].addr = token;
         offer[0].ids = new uint256[](1);
         offer[0].ids[0] = t.tokenId;
