@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
+// Copyright 2024 Divergence Tech Ltd.
 pragma solidity 0.8.25;
 /**
  * GENERATED CODE - DO NOT EDIT
@@ -44,9 +45,11 @@ abstract contract TMPLSwapperBase is ET, SwapperBase {
                 revert ExcessPlatformFee(fee, swap.consideration.maxPlatformFee);
             }
 
+            // MUST remain as the last step. See function comment for rationale.
             _disburseFunds(swap, feeRecipient, fee);
         } else if (action == CANCEL) {
             codeToDeploy = CANCELLED_ARTIFACT;
+            // MUST remain as the last step for the same reason as _disburseFunds().
             _cancel(swap.parties);
         } else {
             revert UnsupportedAction(action);
@@ -60,7 +63,11 @@ abstract contract TMPLSwapperBase is ET, SwapperBase {
         }
     }
 
-    function _disburseFunds(TMPLSwap memory, address payable, uint256) internal virtual;
+    /**
+     * @dev Disburses funds as defined by `swap.consideration`. This is guaranteed to be the last function called
+     * before the call to _postExecutionInvariantsMet(), allowing for coupled logic between the two.
+     */
+    function _disburseFunds(TMPLSwap memory swap, address payable feeRecipient, uint256 fee) internal virtual;
 
     /**
      * @dev Called at the end of the constructor, which reverts if this function returns false.
