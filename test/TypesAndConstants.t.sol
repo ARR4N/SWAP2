@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 
 import {Message} from "../src/ET.sol";
-import {Action, ActionMessageLib, Parties, PayableParties} from "../src/TypesAndConstants.sol";
+import {Action, ActionMessageLib, FILL, CANCEL, Parties, PayableParties} from "../src/TypesAndConstants.sol";
 import {SwapperBase} from "../src/SwapperBase.sol";
 
 contract TypesTest is Test, SwapperBase {
@@ -26,10 +26,14 @@ contract TypesTest is Test, SwapperBase {
         assertTrue(pointersMatch, "pointers match");
     }
 
-    function testFeeConfigRoundTrip(Action action, address payable feeRecipient, uint16 basisPoints) public {
-        Message m = action.withFeeConfig(feeRecipient, basisPoints);
+    function testDistinctActions() public {
+        assertFalse(FILL == CANCEL);
+    }
 
-        assertTrue(m.action() == action, "action");
+    function testFeeConfigRoundTrip(address payable feeRecipient, uint16 basisPoints) public {
+        Message m = ActionMessageLib.fillWithFeeConfig(feeRecipient, basisPoints);
+
+        assertTrue(m.action() == FILL, "FILL action");
 
         (address payable gotRecipient, uint16 gotBasisPoints) = m.feeConfig();
         assertEq(feeRecipient, gotRecipient);

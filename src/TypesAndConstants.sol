@@ -3,6 +3,19 @@ pragma solidity ^0.8.24;
 
 import {Message} from "./ET.sol";
 
+/**
+ * =======
+ *
+ * Actions
+ *
+ * =======
+ */
+
+/**
+ * @dev Denotes an action that a swapper contract must perform.
+ * @dev Swapper contracts "phone home" to their deployer, receiving a single-word `Message`. An `Action` is analogous
+ * to a function selector in said `Message`, with the remaining bytes being analogous to call data.
+ */
 type Action is bytes4;
 
 /// @dev Indicates that the user requested that the swap be performed.
@@ -11,17 +24,22 @@ Action constant FILL = Action.wrap(bytes4(keccak256("FILL")));
 /// @dev Indicates that the user requested that the swap be cancelled.
 Action constant CANCEL = Action.wrap(bytes4(keccak256("CANCEL")));
 
+/// @dev A precomputed `Message` with the cancellation `Action` as it has no arguments.
 Message constant CANCEL_MSG = Message.wrap(bytes32(Action.unwrap(CANCEL)));
 
+/// @dev Converts between `Action` and `Message` types.
 library ActionMessageLib {
-    function withFeeConfig(Action a, address feeRecipient, uint16 basisPoints) internal pure returns (Message) {
-        return Message.wrap(bytes32(abi.encodePacked(a, feeRecipient, basisPoints)));
+    /// @dev Appends the `FILL` action with platform-fee configuration. See `SwapperDeployerBase` re params.
+    function fillWithFeeConfig(address feeRecipient, uint16 basisPoints) internal pure returns (Message) {
+        return Message.wrap(bytes32(abi.encodePacked(FILL, feeRecipient, basisPoints)));
     }
 
+    /// @dev Extracts the `Action` from the `Message`, assuming that it is the prefix.
     function action(Message m) internal pure returns (Action) {
         return Action.wrap(bytes4(Message.unwrap(m)));
     }
 
+    /// @dev Inverse of fillWithFeeConfig().
     function feeConfig(Message m) internal pure returns (address payable feeRecipient, uint16 basisPoints) {
         uint256 u = uint256(Message.unwrap(m));
         feeRecipient = payable(address(bytes20(bytes28(uint224(u)))));
@@ -29,12 +47,24 @@ library ActionMessageLib {
     }
 }
 
+/**
+ * @dev Equality check for two Actions, used globally as ==.
+ */
 function _eq(Action a, Action b) pure returns (bool) {
     return Action.unwrap(a) == Action.unwrap(b);
 }
 
 using {_eq as ==} for Action global;
 
+/**
+ * ===========================
+ *
+ * Deployed contract artifacts
+ *
+ * ===========================
+ */
+
+/// @dev TODO
 uint256 constant FILLED_ARTIFACT = 0x5f5ffd; // PUSH0 PUSH0 REVERT
 
 bytes32 constant FILLED_CODEHASH = keccak256(abi.encodePacked(uint24(FILLED_ARTIFACT)));
