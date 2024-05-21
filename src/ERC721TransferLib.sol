@@ -36,7 +36,7 @@ library ERC721TransferLib {
      */
     function _transfer(MultiERC721Token[] memory tokens, Parties memory parties) internal {
         // Reusable memory buffer for call(), so we only have to copy the tokenId and swap the address being called.
-        bytes memory callData = abi.encodeWithSelector(IERC721.transferFrom.selector, parties.seller, parties.buyer, 0);
+        bytes memory callData = abi.encodeCall(IERC721.transferFrom, (parties.seller, parties.buyer, 0));
 
         uint256 tokenIdPtr;
         assembly ("memory-safe") {
