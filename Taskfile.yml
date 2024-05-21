@@ -8,9 +8,9 @@ tasks:
     dir: "./src/"
     cmds:
       - mkdir -p {{.TYPE}}
-      - < TMPL/TMPLSwapperDeployer.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}SwapperDeployer.gen.sol
-      - < TMPL/TMPLSwapperBase.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}SwapperBase.gen.sol
-      - < TMPL/TMPLFor{{.CONSIDERATION}}Swapper.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}Swapper.gen.sol
+      - < TMPL/SwapperDeployer.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}SwapperDeployer.gen.sol
+      - < TMPL/SwapperBase.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}SwapperBase.gen.sol
+      - < TMPL/For{{.CONSIDERATION}}Swapper.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}Swapper.gen.sol
 
   generateImports:
     cmds:
