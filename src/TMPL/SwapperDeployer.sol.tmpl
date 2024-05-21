@@ -9,7 +9,9 @@ import {TMPLSwapper} from "./TMPLSwapper.gen.sol";
 
 import {ETDeployer, ETPredictor} from "../ET.sol";
 import {SwapperDeployerBase} from "../SwapperDeployerBase.sol";
-import {OnlyPartyCanCancel, Action, ActionMessageLib, FILL, CANCEL_MSG} from "../TypesAndConstants.sol";
+import {
+    OnlyPartyCanCancel, Action, ActionMessageLib, FILL, CANCEL_MSG, ISwapperEvents
+} from "../TypesAndConstants.sol";
 
 /// @dev Predictor of TMPLSwapper contract addresses.
 contract TMPLSwapperPredictor is ETPredictor {
@@ -23,7 +25,7 @@ contract TMPLSwapperPredictor is ETPredictor {
 }
 
 /// @dev Deployer of TMPLSwapper contracts.
-abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, SwapperDeployerBase {
+abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, SwapperDeployerBase, ISwapperEvents {
     using ActionMessageLib for Action;
 
     event Proposal(address indexed swapper, address indexed seller, address indexed buyer, TMPLSwap, bytes32 salt);
