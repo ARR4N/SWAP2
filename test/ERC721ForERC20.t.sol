@@ -7,7 +7,7 @@ import {ERC721ForXTest} from "./ERC721ForXTest.t.sol";
 import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 import {ERC20Test} from "./ERC20Test.t.sol";
 
-import {ERC721Token} from "../src/ERC721SwapperLib.sol";
+import {ERC721Token} from "../src/ERC721TransferLib.sol";
 import {ERC721ForERC20Swap, IERC20} from "../src/ERC721ForERC20/ERC721ForERC20Swap.sol";
 import {ERC721ForERC20SwapperDeployer} from "../src/ERC721ForERC20/ERC721ForERC20SwapperDeployer.gen.sol";
 import {InsufficientBalance, Disbursement, Parties} from "../src/TypesAndConstants.sol";

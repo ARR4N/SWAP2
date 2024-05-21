@@ -7,7 +7,7 @@ import {ERC721ForXTest} from "./ERC721ForXTest.t.sol";
 import {SwapperTestLib} from "./SwapperTestBase.t.sol";
 import {NativeTokenTest} from "./NativeTokenTest.t.sol";
 
-import {MultiERC721Token} from "../src/ERC721SwapperLib.sol";
+import {MultiERC721Token} from "../src/ERC721TransferLib.sol";
 import {MultiERC721ForNativeSwap} from "../src/MultiERC721ForNative/MultiERC721ForNativeSwap.sol";
 import {MultiERC721ForNativeSwapperDeployer} from
     "../src/MultiERC721ForNative/MultiERC721ForNativeSwapperDeployer.gen.sol";

@@ -14,7 +14,7 @@ struct MultiERC721Token {
     uint256[] ids;
 }
 
-library ERC721SwapperLib {
+library ERC721TransferLib {
     function _transfer(ERC721Token memory token, Parties memory parties) internal {
         token.addr.transferFrom(parties.seller, parties.buyer, token.id);
     }

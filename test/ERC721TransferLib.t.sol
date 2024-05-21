@@ -5,10 +5,10 @@ import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 
 import {ITestEvents, Token} from "./SwapperTestBase.t.sol";
-import {ERC721SwapperLib, MultiERC721Token, IERC721} from "../src/ERC721SwapperLib.sol";
+import {ERC721TransferLib, MultiERC721Token, IERC721} from "../src/ERC721TransferLib.sol";
 import {Parties} from "../src/TypesAndConstants.sol";
 
-contract ERC721SwapperLibTest is Test, ITestEvents {
+contract ERC721TransferLibTest is Test, ITestEvents {
     address public tokenTemplate = address(new Token());
 
     uint256 constant NUM_CONTRACTS = 5;
@@ -50,7 +50,7 @@ contract ERC721SwapperLibTest is Test, ITestEvents {
         _assertOwner(tokens, parties.seller);
 
         vm.startPrank(parties.seller);
-        ERC721SwapperLib._transfer(tokens, parties);
+        ERC721TransferLib._transfer(tokens, parties);
         vm.stopPrank();
 
         _assertOwner(tokens, parties.buyer);

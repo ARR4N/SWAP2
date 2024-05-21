@@ -3,7 +3,7 @@ pragma solidity 0.8.25;
 
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {Consideration, Parties} from "../TypesAndConstants.sol";
-import {ERC721Token} from "../ERC721SwapperLib.sol";
+import {ERC721Token} from "../ERC721TransferLib.sol";
 
 struct TMPLSwap {
     Parties parties; // MUST be substituted for PayableParties for native-token consideration

@@ -6,7 +6,7 @@ pragma solidity 0.8.25;
 
 import {TMPLSwap} from "./TMPLSwap.sol";
 
-import {ERC721SwapperLib} from "../ERC721SwapperLib.sol";
+import {ERC721TransferLib} from "../ERC721TransferLib.sol";
 import {ET, Message} from "../ET.sol";
 import {SwapperBase} from "../SwapperBase.sol";
 import {
@@ -36,7 +36,7 @@ abstract contract TMPLSwapperBase is ET, SwapperBase {
         if (action == FILL) {
             codeToDeploy = FILLED_ARTIFACT;
 
-            ERC721SwapperLib._transfer(swap.offer, _asNonPayableParties(swap.parties));
+            ERC721TransferLib._transfer(swap.offer, _asNonPayableParties(swap.parties));
 
             (address payable feeRecipient, uint16 basisPoints) = message.feeConfig();
             uint256 fee = Math.mulDiv(swap.consideration.total, basisPoints, 10_000);
