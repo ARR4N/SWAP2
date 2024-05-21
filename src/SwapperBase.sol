@@ -1,10 +1,22 @@
 // SPDX-License-Identifier: UNLICENSED
+// Copyright 2024 Divergence Tech Ltd.
 pragma solidity 0.8.25;
 
 import {Parties, PayableParties} from "./TypesAndConstants.sol";
 
-/// @dev Base contract for all <T>Swapper implementations.
+/**
+ * @dev Base contract for all <T>Swapper implementations. As implementations are created by simple text substitution
+ * from templates, they require function overloading based on <T>Swap struct fields; this contract enables such
+ * behaviour, greatly simplifying code generation.
+ */
 contract SwapperBase {
+    /**
+     * @dev All <T>Swappers call _cancel() with their respective [Payable]Parties, the specific one chosen by the
+     * compiler.
+     * @dev Active cancellation isn't needed by all consideration types, hence the empty implementations. If a
+     * <U>Consideration contract overrides a function then the compiler will guide composition of contracts
+     * by requiring an explicit override. See `TMPL/ForNativeSwapper.sol.tmpl` as an example.
+     */
     function _cancel(Parties memory) internal virtual {}
     function _cancel(PayableParties memory) internal virtual {}
 
@@ -15,11 +27,7 @@ contract SwapperBase {
         }
     }
 
-    /**
-     * @dev Echoes its argument unchanged. This is a convenience for code that may have either a `Parties` or a
-     * `PayableParties` but needs the former, greatly simplifying code generation by having the compiler choose the
-     * correct function based on argument type.
-     */
+    /// @dev Echoes its argument unchanged.
     function _asNonPayableParties(Parties memory p) internal pure returns (Parties memory) {
         return p;
     }
