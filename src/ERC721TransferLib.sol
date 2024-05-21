@@ -30,15 +30,36 @@ library ERC721TransferLib {
     }
 
     /**
-     * @dev Transfers all tokens from `parties.seller` to `parties.buyer`.
+     * @dev Transfers all tokens from `parties.seller` to `parties.buyer`. The order of transfer is NOT guaranteed.
      * @param tokens An _array_ of MultiERC721Token structs, representing any number of tokens. {addr,id} pairs MUST be
      * distinct across the entire array.
      */
     function _transfer(MultiERC721Token[] memory tokens, Parties memory parties) internal {
+        // Reusable memory buffer for call(), so we only have to copy the tokenId and swap the address being called.
+        bytes memory callData = abi.encodeWithSelector(IERC721.transferFrom.selector, parties.seller, parties.buyer, 0);
+
+        uint256 tokenIdPtr;
+        assembly ("memory-safe") {
+            tokenIdPtr := add(callData, 0x64)
+        }
+
         for (uint256 i = 0; i < tokens.length; ++i) {
-            IERC721 t = tokens[i].addr;
-            for (uint256 j = 0; j < tokens[i].ids.length; ++j) {
-                t.transferFrom(parties.seller, parties.buyer, tokens[i].ids[j]);
+            address addr = address(tokens[i].addr);
+            uint256[] memory ids = tokens[i].ids;
+
+            for (uint256 offset = tokens[i].ids.length * 0x20; offset > 0; offset -= 0x20) {
+                assembly ("memory-safe") {
+                    mcopy(tokenIdPtr, add(ids, offset), 0x20)
+                }
+                (bool success,) = addr.call(callData);
+
+                if (!success) {
+                    assembly ("memory-safe") {
+                        let free := mload(0x40)
+                        returndatacopy(free, 0, returndatasize())
+                        revert(free, returndatasize())
+                    }
+                }
             }
         }
     }
