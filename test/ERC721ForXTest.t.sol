@@ -17,6 +17,14 @@ import {ETDeployer} from "../src/ET.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
+/// @dev Contract that returns all funds sent to it, used for tests of griefing.
+contract FundsReflector {
+    receive() external payable {
+        (bool ok,) = msg.sender.call{value: msg.value}("");
+        assert(ok);
+    }
+}
+
 /**
  * @notice Implements concrete tests of swapping a single ERC721, agnostic to type of payment.
  * @dev Inherit from both this contract and either NativeTokenTest or ERC20Test for a complete, non-abstract test
@@ -80,11 +88,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
         assertEq(token.ownerOf(tokenId), passes ? test.buyer() : test.seller(), "token owner");
 
-        assertEq(
-            _balance(test.seller()),
-            passes ? test.totalForSeller() + _expectedExcessSellerBalanceAfterFill(test) : 0,
-            "seller balance"
-        );
+        assertEq(_balance(test.seller()), passes ? _expectedSellerBalanceAfterFill(test) : 0, "seller balance");
         assertEq(_balance(test.platformFeeRecipient), passes ? test.platformFee() : 0, "platform-fee recipient");
         assertEq(_balance(swapper), passes ? 0 : _swapperPrePay(test), "swapper balance");
         assertEq(_balance(address(factory)), 0, "factory balance remains zero");
@@ -99,6 +103,10 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         _afterExecute(test, swapper, passes);
 
         return swapper;
+    }
+
+    function _expectedSellerBalanceAfterFill(TestCase memory t) internal view returns (uint256) {
+        return t.totalForSeller() + _expectedExcessSellerBalanceAfterFill(t);
     }
 
     /// @dev Common setup shared by tests of both fill() and cancel().
@@ -294,6 +302,39 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         // The most precise way to detect a redeployment is to see that CREATE2 reverts without any return data.
         // Inspection of the trace with `forge test -vvvv` is necessary to see the [CreationCollision] error.
         _testFill(t, abi.encodeWithSelector(ETDeployer.Create2EmptyRevert.selector));
+    }
+
+    function testGriefNativeTokenInvariant(ERC721TestCase memory t, uint8 vandalIndex)
+        external
+        assumeValidTest(t.base)
+        assumePaymentsValid(t.base)
+        assumeSufficientPayment(t.base)
+        assumeValidPlatformFee(t.base)
+        assumeApproving(t.base)
+    {
+        vm.skip(_isERC20Test());
+        // Native-token consideration has a post-execution invariant of a zero balance, which could open us up to a
+        // reentrancy griefing attack if funds are sent during the swap. We demonstrate that this isn't possible by
+        // having one of the third parties return the value they receive, which ends up in the seller's balance.
+
+        vm.assume(t.base._numThirdParty > 0);
+
+        Disbursement memory vandal = t.base._thirdParty[vandalIndex % t.base._numThirdParty];
+        vm.assume(vandal.amount > 0);
+        vandal.to = address(new FundsReflector{salt: keccak256(abi.encode(t))}());
+        vm.label(vandal.to, "vandal");
+
+        _beforeExecute(t);
+        vm.startPrank(t.base.caller);
+        _fill(t);
+        vm.stopPrank();
+
+        assertEq(_balance(vandal.to), 0, "vandal attempted griefing attack");
+        assertEq(
+            _balance(t.base.seller()),
+            _expectedSellerBalanceAfterFill(t.base) + vandal.amount,
+            "seller receives excess amount sent to contract"
+        );
     }
 
     function testGas() external {

@@ -133,6 +133,8 @@ abstract contract SwapperTestBase is Test, ITestEvents {
         factory.setPlatformFee(t.platformFeeRecipient, t.platformFeeBasisPoints);
     }
 
+    function _isERC20Test() internal pure virtual returns (bool);
+
     /// @dev Returns the balance of the address, denominated in the payment currency (native or specific ERC20).
     function _balance(address) internal view virtual returns (uint256);
 

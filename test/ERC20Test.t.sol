@@ -39,6 +39,11 @@ abstract contract ERC20Test is SwapperTestBase {
     }
 
     /// @inheritdoc SwapperTestBase
+    function _isERC20Test() internal pure override returns (bool) {
+        return true;
+    }
+
+    /// @inheritdoc SwapperTestBase
     function _balance(address a) internal view override returns (uint256) {
         return currency.balanceOf(a);
     }
