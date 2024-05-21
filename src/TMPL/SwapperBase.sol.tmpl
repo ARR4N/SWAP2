@@ -31,7 +31,7 @@ abstract contract TMPLSwapperBase is ET, SwapperBase {
         Message message = ET._phoneHome();
         Action action = message.action();
 
-        uint256 codeToDeploy = 0xFE; // INVALID
+        bytes3 codeToDeploy;
 
         if (action == FILL) {
             codeToDeploy = FILLED_ARTIFACT;
@@ -56,7 +56,7 @@ abstract contract TMPLSwapperBase is ET, SwapperBase {
 
         assembly ("memory-safe") {
             mstore(0, codeToDeploy)
-            return(29, 3)
+            return(0, 3)
         }
     }
 

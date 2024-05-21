@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
+// Copyright 2024 Divergence Tech Ltd.
 pragma solidity ^0.8.24;
 
 import {Message} from "./ET.sol";
@@ -61,20 +62,33 @@ using {_eq as ==} for Action global;
  *
  * Deployed contract artifacts
  *
+ * To minimise gas, swapper contracts deploy minimal footprints of only 3 bytes (600 gas). Although single-byte
+ * artifacts are possible, cleanly reverting contracts are desirable (see below). As such, all artifacts are equivalent
+ * to `revert(0,0)` but differ in their approach so their codehashes can be used as a record of the `Action` taken.
+ *
+ * One use case of native-token consideration is to allow for prepayment of consideration into the predicted swapper
+ * address. Reverting contracts avoid accidental locking of funds should there be (a) a race condition between buyer
+ * prepayment and seller cancellation; or (b) buyer's accidentally reusing a swapper address from a previous trade.
+ *
  * ===========================
  */
 
-/// @dev TODO
-uint256 constant FILLED_ARTIFACT = 0x5f5ffd; // PUSH0 PUSH0 REVERT
+/// @dev Contract code to deploy when the fill() function is called; simply `revert(0,0)`.
+bytes3 constant FILLED_ARTIFACT = 0x5f5ffd; // PUSH0 PUSH0 REVERT
 
+/// @dev Codehash of a swapper artifact denoting that the swap was filled.
 bytes32 constant FILLED_CODEHASH = keccak256(abi.encodePacked(uint24(FILLED_ARTIFACT)));
 
-uint256 constant CANCELLED_ARTIFACT = 0x585ffd; // PC(0) PUSH0 REVERT
+/// @dev Contract code to deploy when the cancel() function is called; functionally equivalent to `FILLED_ARTIFACT`.
+bytes3 constant CANCELLED_ARTIFACT = 0x585ffd; // PC(0) PUSH0 REVERT
 
+/// @dev Codehash of a swapper artifact denoting that the swap was cancelled.
 bytes32 constant CANCELLED_CODEHASH = keccak256(abi.encodePacked(uint24(CANCELLED_ARTIFACT)));
 
+/// @dev Codehash denoting that a (presumed) swapper is yet to be deployed.
 bytes32 constant PENDING_CODEHASH = keccak256("");
 
+/// @dev Status of a swapper contract, determined from an account's codehash.
 enum SwapStatus {
     Pending,
     Filled,
@@ -82,6 +96,11 @@ enum SwapStatus {
     Invalid
 }
 
+/**
+ * @dev Determines the `SwapStatus` of a swapper.
+ * @param swapper Predicted or existing address of a swapper contract. MUST be a valid swapper address otherwise the
+ * returned value is invalid.
+ */
 function swapStatus(address swapper) view returns (SwapStatus) {
     bytes32 h = swapper.codehash;
     // EIP-1052 differentiates between non-existent and existent-but-codeless accounts. Any prepayment of ETH to the
@@ -97,6 +116,14 @@ function swapStatus(address swapper) view returns (SwapStatus) {
     }
     return SwapStatus.Invalid;
 }
+
+/**
+ * ======
+ *
+ * Errors
+ *
+ * ======
+ */
 
 /// @dev Thrown if an address other than the selling or buying party attempts to cancel a swap.
 error OnlyPartyCanCancel();
