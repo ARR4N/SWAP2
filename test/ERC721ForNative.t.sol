@@ -7,8 +7,9 @@ import {ERC721ForXTest} from "./ERC721ForXTest.t.sol";
 import {SwapperTestLib} from "./SwapperTestBase.t.sol";
 import {NativeTokenTest} from "./NativeTokenTest.t.sol";
 
-import {ERC721Token} from "../src/ERC721SwapperLib.sol";
+import {ERC721TransferLib} from "../src/ERC721TransferLib.sol";
 import {ERC721ForNativeSwap} from "../src/ERC721ForNative/ERC721ForNativeSwap.sol";
+import {ERC721ForNativeSwapperDeployer} from "../src/ERC721ForNative/ERC721ForNativeSwapperDeployer.gen.sol";
 import {InsufficientBalance, Disbursement, Parties} from "../src/TypesAndConstants.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
@@ -24,7 +25,7 @@ contract ERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
     function _asSwap(ERC721TestCase memory t) private view returns (ERC721ForNativeSwap memory) {
         return ERC721ForNativeSwap({
             parties: _asPayableParties(t.base.parties),
-            offer: ERC721Token({addr: token, id: t.tokenId}),
+            offer: ERC721TransferLib.ERC721Token({addr: token, id: t.tokenId}),
             consideration: t.base.consideration()
         });
     }
@@ -42,6 +43,11 @@ contract ERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
     /// @inheritdoc ERC721ForXTest
     function _encodedSwapAndSalt(ERC721TestCase memory t, bytes32 salt) internal view override returns (bytes memory) {
         return abi.encode(_asSwap(t), salt);
+    }
+
+    /// @inheritdoc ERC721ForXTest
+    function _fillSelector() internal pure override returns (bytes4) {
+        return ERC721ForNativeSwapperDeployer.fill.selector;
     }
 
     /// @inheritdoc ERC721ForXTest

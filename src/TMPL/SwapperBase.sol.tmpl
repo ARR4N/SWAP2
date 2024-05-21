@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
+// Copyright 2024 Divergence Tech Ltd.
 pragma solidity 0.8.25;
 /**
  * GENERATED CODE - DO NOT EDIT
@@ -6,7 +7,7 @@ pragma solidity 0.8.25;
 
 import {TMPLSwap} from "./TMPLSwap.sol";
 
-import {ERC721SwapperLib} from "../ERC721SwapperLib.sol";
+import {ERC721TransferLib} from "../ERC721TransferLib.sol";
 import {ET, Message} from "../ET.sol";
 import {SwapperBase} from "../SwapperBase.sol";
 import {
@@ -17,8 +18,7 @@ import {
     CANCEL,
     FILLED_ARTIFACT,
     CANCELLED_ARTIFACT,
-    ExcessPlatformFee,
-    Disbursement
+    ExcessPlatformFee
 } from "../TypesAndConstants.sol";
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
@@ -31,12 +31,12 @@ abstract contract TMPLSwapperBase is ET, SwapperBase {
         Message message = ET._phoneHome();
         Action action = message.action();
 
-        uint256 codeToDeploy = 0xFE; // INVALID
+        bytes3 codeToDeploy;
 
         if (action == FILL) {
             codeToDeploy = FILLED_ARTIFACT;
 
-            ERC721SwapperLib._transfer(swap.offer, _asNonPayableParties(swap.parties));
+            ERC721TransferLib._transfer(swap.offer, _asNonPayableParties(swap.parties));
 
             (address payable feeRecipient, uint16 basisPoints) = message.feeConfig();
             uint256 fee = Math.mulDiv(swap.consideration.total, basisPoints, 10_000);
@@ -44,9 +44,11 @@ abstract contract TMPLSwapperBase is ET, SwapperBase {
                 revert ExcessPlatformFee(fee, swap.consideration.maxPlatformFee);
             }
 
+            // MUST remain as the last step. See function comment for rationale.
             _disburseFunds(swap, feeRecipient, fee);
         } else if (action == CANCEL) {
             codeToDeploy = CANCELLED_ARTIFACT;
+            // MUST remain as the last step for the same reason as _disburseFunds().
             _cancel(swap.parties);
         } else {
             revert UnsupportedAction(action);
@@ -56,11 +58,15 @@ abstract contract TMPLSwapperBase is ET, SwapperBase {
 
         assembly ("memory-safe") {
             mstore(0, codeToDeploy)
-            return(29, 3)
+            return(0, 3)
         }
     }
 
-    function _disburseFunds(TMPLSwap memory, address payable, uint256) internal virtual;
+    /**
+     * @dev Disburses funds as defined by `swap.consideration`. This is guaranteed to be the last function called
+     * before the call to _postExecutionInvariantsMet(), allowing for coupled logic between the two.
+     */
+    function _disburseFunds(TMPLSwap memory swap, address payable feeRecipient, uint256 fee) internal virtual;
 
     /**
      * @dev Called at the end of the constructor, which reverts if this function returns false.
