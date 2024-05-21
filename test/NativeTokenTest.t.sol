@@ -8,6 +8,10 @@ import {InsufficientBalance, Consideration, Parties, PayableParties} from "../sr
 abstract contract NativeTokenTest is SwapperTestBase {
     using SwapperTestLib for TestCase;
 
+    function _isERC20Test() internal pure override returns (bool) {
+        return false;
+    }
+
     /// @inheritdoc SwapperTestBase
     function _balance(address a) internal view override returns (uint256) {
         return a.balance;
