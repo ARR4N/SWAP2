@@ -39,6 +39,8 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
     function _encodedSwapAndSalt(ERC721TestCase memory, bytes32) internal view virtual returns (bytes memory);
 
+    function _fillSelector() internal pure virtual returns (bytes4);
+
     /// @dev Fills the swap defined by the test case.
     function _fill(ERC721TestCase memory) internal virtual;
 
@@ -276,6 +278,23 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         vm.startPrank(caller);
         _cancel(t);
         vm.stopPrank();
+    }
+
+    function testNonReentrant(ERC721TestCase memory t)
+        external
+        assumeValidTest(t.base)
+        assumePaymentsValid(t.base)
+        assumeSufficientPayment(t.base)
+        assumeValidPlatformFee(t.base)
+        assumeApproving(t.base)
+    {
+        token.setPostTransferCall(
+            address(factory), abi.encodePacked(_fillSelector(), _encodedSwapAndSalt(t, t.base.salt))
+        );
+
+        // The most precise way to detect a redeployment is to see that CREATE2 reverts without any return data.
+        // Inspection of the trace with `forge test -vvvv` is necessary to see the [CreationCollision] error.
+        _testFill(t, abi.encodeWithSelector(ETDeployer.Create2EmptyRevert.selector));
     }
 
     function testGas() external {
