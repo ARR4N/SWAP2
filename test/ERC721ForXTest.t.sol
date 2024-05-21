@@ -5,7 +5,6 @@ import {Test, Vm} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 
-import {ERC721Token} from "../src/ERC721SwapperLib.sol";
 import {
     OnlyPartyCanCancel,
     ExcessPlatformFee,

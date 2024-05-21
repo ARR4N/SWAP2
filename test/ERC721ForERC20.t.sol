@@ -7,7 +7,7 @@ import {ERC721ForXTest} from "./ERC721ForXTest.t.sol";
 import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 import {ERC20Test} from "./ERC20Test.t.sol";
 
-import {ERC721Token} from "../src/ERC721SwapperLib.sol";
+import {ERC721TransferLib} from "../src/ERC721TransferLib.sol";
 import {ERC721ForERC20Swap, IERC20} from "../src/ERC721ForERC20/ERC721ForERC20Swap.sol";
 import {ERC721ForERC20SwapperDeployer} from "../src/ERC721ForERC20/ERC721ForERC20SwapperDeployer.gen.sol";
 import {InsufficientBalance, Disbursement, Parties} from "../src/TypesAndConstants.sol";
@@ -30,7 +30,7 @@ contract ERC721ForERC20Test is ERC721ForXTest, ERC20Test {
     function _asSwap(ERC721TestCase memory t) private view returns (ERC721ForERC20Swap memory) {
         return ERC721ForERC20Swap({
             parties: t.base.parties,
-            offer: ERC721Token({addr: token, id: t.tokenId}),
+            offer: ERC721TransferLib.ERC721Token({addr: token, id: t.tokenId}),
             consideration: t.base.consideration(),
             currency: currency
         });

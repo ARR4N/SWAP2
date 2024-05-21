@@ -1,28 +1,39 @@
 // SPDX-License-Identifier: UNLICENSED
+// Copyright 2024 Divergence Tech Ltd.
 pragma solidity 0.8.25;
 /**
  * GENERATED CODE - DO NOT EDIT
  */
 
-import {TMPLSwap as Swap} from "./TMPLSwap.sol";
+import {TMPLSwap} from "./TMPLSwap.sol";
 import {TMPLSwapperBase} from "./TMPLSwapperBase.gen.sol";
 
 import {NativeTokenConsideration} from "../NativeTokenConsideration.sol";
 import {SwapperBase} from "../SwapperBase.sol";
 import {PayableParties} from "../TypesAndConstants.sol";
 
+/// @notice Executes the swap with consideration denominated in the chain's native toiken.
 contract TMPLSwapper is TMPLSwapperBase, NativeTokenConsideration {
-    constructor(Swap memory swap) payable TMPLSwapperBase(swap) {}
+    constructor(TMPLSwap memory swap) payable TMPLSwapperBase(swap) {}
 
-    function _disburseFunds(Swap memory swap, address payable feeRecipient, uint256 fee) internal override {
+    /**
+     * @dev Propagates arguments, unchanged, to NativeTokenConsideration._disburseFunds(), acting only to modify the
+     * function signature to accept a `TMPLSwap`.
+     */
+    function _disburseFunds(TMPLSwap memory swap, address payable feeRecipient, uint256 fee) internal override {
         NativeTokenConsideration._disburseFunds(swap.parties, swap.consideration, feeRecipient, fee);
     }
 
+    /// @dev Required override; propagates `p`, unchanged, to NativeTokenConsideration._cancel().
     function _cancel(PayableParties memory p) internal override(SwapperBase, NativeTokenConsideration) {
         NativeTokenConsideration._cancel(p);
     }
 
-    function _postExecutionInvariantsMet(Swap memory) internal view override returns (bool) {
+    /**
+     * @dev Returns NativeTokenConsideration._postExecutionInvariantsMet(), acting only to modify the function signature
+     * to accept a `TMPLSwap`.
+     */
+    function _postExecutionInvariantsMet(TMPLSwap memory) internal view override returns (bool) {
         return NativeTokenConsideration._postExecutionInvariantsMet();
     }
 }
