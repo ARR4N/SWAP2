@@ -38,10 +38,22 @@ interface IETHome {
 contract ETPredictor {
     /**
      * @dev Convenience wrapper around OpenZeppelin's Create2.computeAddress() to match the argument signature of
-     * _deploy().
+     * `ETDeployer._deploy()`, assuming `address(this)` as the `deployer`.
      */
     function _predictDeploymentAddress(bytes memory bytecode, bytes32 salt) internal view returns (address) {
-        return Create2.computeAddress(salt, keccak256(bytecode), address(this));
+        return _predictDeploymentAddress(bytecode, salt, address(this));
+    }
+
+    /**
+     * @dev Convenience wrapper around OpenZeppelin's Create2.computeAddress() to mirror the argument signature of
+     * `ETDeployer._deploy()`, with the exception of an additional `deployer` address.
+     */
+    function _predictDeploymentAddress(bytes memory bytecode, bytes32 salt, address deployer)
+        internal
+        pure
+        returns (address)
+    {
+        return Create2.computeAddress(salt, keccak256(bytecode), deployer);
     }
 }
 

@@ -2,19 +2,35 @@
 // Copyright 2024 Divergence Tech Ltd.
 pragma solidity 0.8.25;
 
-import {ERC721ForNativeSwapperDeployer} from "./ERC721ForNative/ERC721ForNativeSwapperDeployer.gen.sol";
-import {ERC721ForERC20SwapperDeployer} from "./ERC721ForERC20/ERC721ForERC20SwapperDeployer.gen.sol";
-import {MultiERC721ForNativeSwapperDeployer} from "./MultiERC721ForNative/MultiERC721ForNativeSwapperDeployer.gen.sol";
-import {MultiERC721ForERC20SwapperDeployer} from "./MultiERC721ForERC20/MultiERC721ForERC20SwapperDeployer.gen.sol";
+import {
+    ERC721ForNativeSwapperDeployer,
+    ERC721ForNativeSwapperProposer
+} from "./ERC721ForNative/ERC721ForNativeSwapperDeployer.gen.sol";
+import {
+    ERC721ForERC20SwapperDeployer,
+    ERC721ForERC20SwapperProposer
+} from "./ERC721ForERC20/ERC721ForERC20SwapperDeployer.gen.sol";
+import {
+    MultiERC721ForNativeSwapperDeployer,
+    MultiERC721ForNativeSwapperProposer
+} from "./MultiERC721ForNative/MultiERC721ForNativeSwapperDeployer.gen.sol";
+import {
+    MultiERC721ForERC20SwapperDeployer,
+    MultiERC721ForERC20SwapperProposer
+} from "./MultiERC721ForERC20/MultiERC721ForERC20SwapperDeployer.gen.sol";
 
 import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 contract SWAP2 is
     Ownable2Step,
     ERC721ForNativeSwapperDeployer,
+    ERC721ForNativeSwapperProposer,
     ERC721ForERC20SwapperDeployer,
+    ERC721ForERC20SwapperProposer,
     MultiERC721ForNativeSwapperDeployer,
-    MultiERC721ForERC20SwapperDeployer
+    MultiERC721ForNativeSwapperProposer,
+    MultiERC721ForERC20SwapperDeployer,
+    MultiERC721ForERC20SwapperProposer
 {
     /**
      * @param initialOwner Initial owner of the contract. SHOULD be a multisig as this address can modify platform-fee
@@ -50,5 +66,9 @@ contract SWAP2 is
     function _platformFeeConfig() internal view override returns (address payable, uint16) {
         PlatformFeeConfig memory config = feeConfig;
         return (config.recipient, config.basisPoints);
+    }
+
+    function _swapperDeployer() internal view override returns (address) {
+        return address(this);
     }
 }

@@ -10,12 +10,13 @@ import {TMPLSwapper} from "./TMPLSwapper.gen.sol";
 
 import {ETDeployer, ETPredictor} from "../ET.sol";
 import {SwapperDeployerBase} from "../SwapperDeployerBase.sol";
+import {SwapperProposerBase} from "../SwapperProposerBase.sol";
 import {OnlyPartyCanCancel, ActionMessageLib, CANCEL_MSG, ISwapperEvents} from "../TypesAndConstants.sol";
 
 /// @dev Predictor of TMPLSwapper contract addresses.
 contract TMPLSwapperPredictor is ETPredictor {
-    function _swapper(TMPLSwap calldata swap, bytes32 salt) internal view returns (address) {
-        return _predictDeploymentAddress(_bytecode(swap), salt);
+    function _swapper(TMPLSwap calldata swap, bytes32 salt, address deployer) internal pure returns (address) {
+        return _predictDeploymentAddress(_bytecode(swap), salt, deployer);
     }
 
     function _bytecode(TMPLSwap calldata swap) internal pure returns (bytes memory) {
@@ -25,8 +26,6 @@ contract TMPLSwapperPredictor is ETPredictor {
 
 /// @dev Deployer of TMPLSwapper contracts.
 abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, SwapperDeployerBase, ISwapperEvents {
-    event Proposal(address indexed swapper, address indexed seller, address indexed buyer, TMPLSwap, bytes32 salt);
-
     /// @dev Execute the `TMPLSwap`, transferring all assets between the parties.
     function fill(TMPLSwap calldata swap, bytes32 salt) external payable returns (address) {
         (address payable feeRecipient, uint16 basisPoints) = _platformFeeConfig();
@@ -48,11 +47,15 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
 
     /**
      * @notice Computes the address of the swapper contract that will be deployed to execute the `TMPLSwap`.
-     * @dev Important: see propose() as an alternative.
+     * @dev Important: see `TMPLSwapperProposer.propose()` as an alternative.
      */
     function swapper(TMPLSwap calldata swap, bytes32 salt) external view returns (address) {
-        return _swapper(swap, salt);
+        return _swapper(swap, salt, address(this));
     }
+}
+
+abstract contract TMPLSwapperProposer is TMPLSwapperPredictor, SwapperProposerBase {
+    event Proposal(address indexed swapper, address indexed seller, address indexed buyer, TMPLSwap, bytes32 salt);
 
     /**
      * @notice "Announces" a propsed swap (in the form of a `Proposal` event), using the last block's hash as the salt
@@ -74,9 +77,13 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
         // malleability of block hashes is too low and their rate of production too slow for an attack based on
         // discarding undesirable salts.
         bytes32 salt = blockhash(block.number - 1);
-        address swapper_ = _swapper(swap, salt);
+        address swapper_ = _swapper(swap, salt, _swapperDeployer(swap));
         emit Proposal(swapper_, swap.parties.seller, swap.parties.buyer, swap, salt);
         return (salt, swapper_);
+    }
+
+    function _swapperDeployer(TMPLSwap calldata) internal virtual returns (address) {
+        return _swapperDeployer();
     }
 }
 
