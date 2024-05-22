@@ -21,16 +21,12 @@ import {
 
 import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
-contract SWAP2 is
+contract SWAP2Deployer is
     Ownable2Step,
     ERC721ForNativeSwapperDeployer,
-    ERC721ForNativeSwapperProposer,
     ERC721ForERC20SwapperDeployer,
-    ERC721ForERC20SwapperProposer,
     MultiERC721ForNativeSwapperDeployer,
-    MultiERC721ForNativeSwapperProposer,
-    MultiERC721ForERC20SwapperDeployer,
-    MultiERC721ForERC20SwapperProposer
+    MultiERC721ForERC20SwapperDeployer
 {
     /**
      * @param initialOwner Initial owner of the contract. SHOULD be a multisig as this address can modify platform-fee
@@ -67,7 +63,36 @@ contract SWAP2 is
         PlatformFeeConfig memory config = feeConfig;
         return (config.recipient, config.basisPoints);
     }
+}
 
+abstract contract SWAP2ProposerBase is
+    ERC721ForNativeSwapperProposer,
+    ERC721ForERC20SwapperProposer,
+    MultiERC721ForNativeSwapperProposer,
+    MultiERC721ForERC20SwapperProposer
+{}
+
+/// @notice A standalone SWAP2 proposer for an immutable deployer address.
+contract SWAP2Proposer is SWAP2ProposerBase {
+    /// @notice The SWAP2Deployer for which this contract proposes swaps.
+    address public immutable deployer;
+
+    /// @param deployer_ Address of the SWAP2Deployer for which this contract proposes swaps.
+    constructor(address deployer_) {
+        deployer = deployer_;
+    }
+
+    /// @dev The immutable `deployer` is the swapper deployer for all types.
+    function _swapperDeployer() internal view override returns (address) {
+        return deployer;
+    }
+}
+
+/// @notice A combined SWAP2{Deployer,Proposer}.
+contract SWAP2 is SWAP2Deployer, SWAP2ProposerBase {
+    constructor(address initialOwner) SWAP2Deployer(initialOwner) {}
+
+    /// @dev The current contract is the swapper deployer for all types.
     function _swapperDeployer() internal view override returns (address) {
         return address(this);
     }
