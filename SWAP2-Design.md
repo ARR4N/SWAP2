@@ -37,15 +37,30 @@ The combination of the two [attack vectors](#general-attack-vectors) are what le
 The primary author of SWAP2 was on a call with Kevin when this happened and was heavily involved in the investigation.
 Having recently listed a Chromie Squiggle for sale, Kevin was vulnerable due to unrevoked approvals, and fell victim to a phishing attack for OpenSea-compatible signatures.
 
-### Mitigation
+### Mitigation of general attack vectors
 
-TODO: contract addresses in lieu of message digests for signing
+The goal of the typical approval+signature approach is to prove that an asset owner has an intent to undertake a specific trade.
+The _approval_ step proves intent to trade under a set of _general_ rules (the contract logic) while the _signature_ proves agreement with (the hash of) _specific_ trade parameters.
+
+SWAP2 combines both steps. Solidity constructors have their arguments appended after the deployment code, and [CREATE2 addresses](https://eips.ethereum.org/EIPS/eip-1014) are determined (in part) from the hash of this concatenated buffer. If a user (willingly) approves such an address we can therefore establish equivalent proof of intent to trade their assets.
+
+With respect to signing (transactions or otherwise), the residual risk for SWAP2 contracts is therefore no different to baseline when compared to approving an arbitrary EOA.
+This design therefore achieves its goal of reducing phishing risk although at the expense of per-trade approvals.
 
 ### SWAP2 attack vectors
 
-TODO: Collisions / second pre-images
+Hash security plays a greater role in SWAP2 than it does in typical approval+signature approaches because of the reduced output size of 160-bit addresses.
 
-#### Proposal
+An adversary with full control over CREATE2 inputs could lock a set of NFTs for sale while finding two different ETH amounts that result in the same counterfactual address.
+Collision resistance amounts to a birthday problem, limiting the security level to ~80 bits.
+For context, the [Bitcoin hash rate](https://www.blockchain.com/explorer/charts/hash-rate) is around 650e18 hashes/sec, or [approximately half an hour](https://www.wolframalpha.com/input?i=%282%5E80+%2F+650e18%29+seconds) to perform 2^80 hashes.
+
+Although this is still highly unlikely, [NIST recommends against 80 bits of security](https://csrc.nist.gov/glossary/term/security_strength#:~:text=a%20security%20strength%20of%2080%20bits%20is%20no%20longer%20considered%20sufficiently%20secure).
+We can achieve this by securely choosing the CREATE2 salt _after_ agreeing to trade details, returning to 160 bits due to second-preimage resistance.
+
+> [!CAUTION]
+> To provide 160-bit security, CREATE2 salts SHOULD be deteremined after agreeing to specifics of a trade.
+> Without this, security guarantees might be halved to 80 bits.
 
 ## Terminology
 
@@ -85,7 +100,7 @@ An Instance can be in any of the following states:
 5. **Cancelled**: _as defined in Terminology_.
 
 > [!IMPORTANT]
-> Although the Proposed state is optional, there are [important security benefits](#proposal) that go beyond merely computing the predicted address in a trusted manner.
+> Although the Proposed state is optional, there are [important security benefits](#swap2-attack-vectors) that go beyond merely computing the predicted address in a trusted manner.
 
 ```mermaid
 stateDiagram-v2
