@@ -8,9 +8,16 @@ The need for per-trade approvals is a deliberate design trade-off to provide inc
 
 ## Requirements
 
-TODO
+1. Improved security over current OTC options (see [threat model](#threat-model)).
+2. Comparable or less gas compared to Sudoswap OTC and Seaport (for the supported trade types).
+3. Ability for a third party (e.g. a broker) to set up the parameters of a trade.
+4. Support for non crypto-native buyers (with assistance):
+   * Some buyers may be investors from non-crypto backgrounds (e.g. traditional art world) and will be assisted by brokers.
+   * At least one broker of such historical deals has found a need to accept ETH simply sent to an address (in their case, acting as an escrow service).
+   * There is significant risk of fat-fingering amounts or sending to the wrong address, so they have previously accepted "test" (negligible value) transactions, which still needs to be possible.
+   * Such trades SHOULD be a last resort, preferring ERC20 approvals to allow for full automation.
 
-## Security: threat model
+## Threat model
 
 ### General attack vectors
 
@@ -45,7 +52,7 @@ The _approval_ step proves intent to trade under a set of _general_ rules (the c
 SWAP2 combines both steps. Solidity constructors have their arguments appended after the deployment code, and [CREATE2 addresses](https://eips.ethereum.org/EIPS/eip-1014) are determined (in part) from the hash of this concatenated buffer. If a user (willingly) approves such an address we can therefore establish equivalent proof of intent to trade their assets.
 
 With respect to signing (transactions or otherwise), the residual risk for SWAP2 contracts is therefore no different to baseline when compared to approving an arbitrary EOA.
-This design therefore achieves its goal of reducing phishing risk although at the expense of per-trade approvals.
+This design therefore achieves requirement (1) of reducing phishing risk although at the expense of requirement (2) due to per-trade approvals.
 
 ### SWAP2 attack vectors
 
@@ -238,13 +245,3 @@ autonumber
     deactivate c
     deactivate toks
 ```
-
----
-
-### Notes
-
-1. Third-party assistance is only needed for participants with bare-minimum ability; i.e. sending ETH.
-   1. Any participant capable of interacting with a website interface SHOULD use the self-service alternative and send ETH while Executing the Deal.
-   2. Test transactions are unnecessary when Executing via the website as the address is never copied/entered manually.
-2. Only one of the Parties can actively Cancel otherwise we are open to griefing attacks.
-3. Even if redeployment was possible (or the scammer attempted interference before Execution), the Instance address is cryptographically coupled to the Parties in a non-malleable fashion. A scammer can't induce a transfer of assets to themself without inducing a victim to approve an arbitrary address (i.e. the status quo).
