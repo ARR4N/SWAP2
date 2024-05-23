@@ -6,7 +6,7 @@ pragma solidity 0.8.25;
  */
 
 import {TMPLSwap} from "./TMPLSwap.sol";
-import {TMPLSwapper} from "./TMPLSwapper.gen.sol";
+import {TMPLSwapper} from "./TMPLSwapper.tmpl.sol";
 
 import {ETDeployer, ETPredictor} from "../ET.sol";
 import {SwapperDeployerBase} from "../SwapperDeployerBase.sol";

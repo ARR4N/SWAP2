@@ -8,9 +8,11 @@ tasks:
     dir: "./src/"
     cmds:
       - mkdir -p {{.TYPE}}
-      - < TMPL/SwapperDeployer.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}SwapperDeployer.gen.sol
-      - < TMPL/SwapperBase.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}SwapperBase.gen.sol
-      - < TMPL/For{{.CONSIDERATION}}Swapper.sol.tmpl sed 's|TMPL|{{.TYPE}}|g' > {{.TYPE}}/{{.TYPE}}Swapper.gen.sol
+      - cp TMPL/TMPLSwapperDeployer.tmpl.sol {{.TYPE}}/{{.TYPE}}SwapperDeployer.gen.sol
+      - cp TMPL/TMPLSwapperBase.tmpl.sol {{.TYPE}}/{{.TYPE}}SwapperBase.gen.sol
+      - cp TMPL/For{{.CONSIDERATION}}Swapper.tmpl.sol {{.TYPE}}/{{.TYPE}}Swapper.gen.sol
+      - sed -i 's|TMPL|{{.TYPE}}|g' {{.TYPE}}/*.gen.sol
+      - sed -i 's|.tmpl.sol|.gen.sol|g' {{.TYPE}}/*.gen.sol
 
   generateImports:
     cmds:
@@ -19,7 +21,7 @@ tasks:
         vars:
           TYPE: '{{.ITEM}}'
           CONSIDERATION: 'Native'
-      - for: ['ERC721ForERC20', 'MultiERC721ForERC20', 'TMPL'] # TMPL is arbitrarily ERC20, to demonstrate the `currency` field
+      - for: ['ERC721ForERC20', 'MultiERC721ForERC20']
         task: _generateImports
         vars:
           TYPE: '{{.ITEM}}'
