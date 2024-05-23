@@ -155,12 +155,6 @@ abstract contract SwapperTestBase is Test, ITestEvents {
     /// @dev Returns whether the NativePayments or ERC20Payments struct (as appropriate) is valid.
     function _paymentsValid(TestCase memory) internal view virtual returns (bool);
 
-    /// @dev Calls vm.assume() with the return value of _paymentsValid().
-    modifier assumePaymentsValid(TestCase memory t) {
-        vm.assume(_paymentsValid(t));
-        _;
-    }
-
     /**
      * @dev Returns the payment amount made available to the swapper contract to use as consideration. When paying with
      * native token, this is the balance of the swapper at execution. When paying with ERC20, this is the minimum of the
@@ -173,37 +167,22 @@ abstract contract SwapperTestBase is Test, ITestEvents {
         return _paymentTendered(t) >= t.total();
     }
 
-    /// @dev Calls vm.assume() with the return value of _sufficientPayment().
-    modifier assumeSufficientPayment(TestCase memory t) {
-        vm.assume(_sufficientPayment(t));
-        _;
-    }
-
-    /// @dev Calls vm.assume() with the negation of the return value of _sufficientPayment().
-    modifier assumeInsufficientPayment(TestCase memory t) {
-        vm.assume(!_sufficientPayment(t));
-        _;
-    }
-
-    modifier assumeValidPlatformFee(TestCase memory t) {
-        vm.assume(t.platformFee() <= t._maxPlatformFee);
-        _;
-    }
-
-    modifier assumeExcessPlatformFee(TestCase memory t) {
-        vm.assume(t.platformFee() > t._maxPlatformFee);
-        _;
-    }
-
     /// @dev Returns the expected error when insufficient payment is being issued to cover the total consideration.
     function _insufficientBalanceError(TestCase memory) internal view virtual returns (bytes memory);
+
+    /// @dev Assumptions to be made by assumeValidTest().
+    struct Assumptions {
+        bool sufficientPayment; // payment tendered is at least as much as that required by `Consideration`
+        bool validPlatformFee; // platform fee is no more than `Consideration.maxPlatformFee`
+        bool approving; // either `ERC721.approve()` or `ERC721.setApprovalForAll()` will be called
+    }
 
     /**
      * @dev Confirms a series of assumptions about the TestCase that make it valid (i.e. plausible).
      * @dev Additionally prunes third-party disbursements such that (a) they don't exceed total consideration, and (b)
      * the recipients are distinct.
      */
-    modifier assumeValidTest(TestCase memory t) {
+    modifier assumeValidTest(TestCase memory t, Assumptions memory assumptions) {
         {
             _assumeDistinctAddress(t.seller());
             _assumeDistinctAddress(t.buyer());
@@ -251,6 +230,11 @@ abstract contract SwapperTestBase is Test, ITestEvents {
             }
         }
 
+        vm.assume(_paymentsValid(t));
+        vm.assume(_sufficientPayment(t) == assumptions.sufficientPayment);
+        vm.assume((t.platformFee() <= t._maxPlatformFee) == assumptions.validPlatformFee);
+        vm.assume((t.approval() != Approval.None) == assumptions.approving);
+
         _;
 
         _clearSeenAddresses();
@@ -287,18 +271,6 @@ abstract contract SwapperTestBase is Test, ITestEvents {
         vm.assume(uint160(a) > 0x0a);
         vm.assume(a.code.length == 0);
         vm.assume(a.balance == 0);
-    }
-
-    /// @dev Assumes that either approve() or setApprovalForAll() will be called by _approveSwapper().
-    modifier assumeApproving(TestCase memory t) {
-        vm.assume(t.approval() != Approval.None);
-        _;
-    }
-
-    /// @dev Assumes that neither approve() nor setApprovalForAll() will be called by _approveSwapper().
-    modifier assumeNotApproving(TestCase memory t) {
-        vm.assume(t.approval() == Approval.None);
-        _;
     }
 
     /**
