@@ -368,6 +368,11 @@ library SwapperTestLib {
         return c;
     }
 
+    /**
+     * @dev Returns the test case's `ERC20Consideration` struct.
+     * @dev If only the total is required, use total() instead.
+     * @param currency Address of the ERC20 in which the consideration is denominated.
+     */
     function erc20Consideration(SwapperTestBase.TestCase memory t, IERC20 currency)
         internal
         pure
