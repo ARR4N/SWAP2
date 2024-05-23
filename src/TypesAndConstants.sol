@@ -2,6 +2,7 @@
 // Copyright 2024 Divergence Tech Ltd.
 pragma solidity ^0.8.24;
 
+import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {Message} from "./ET.sol";
 
 /**
@@ -41,6 +42,13 @@ struct Consideration {
     Disbursement[] thirdParty;
     uint256 maxPlatformFee;
     uint256 total;
+}
+
+struct ERC20Consideration {
+    Disbursement[] thirdParty;
+    uint256 maxPlatformFee;
+    uint256 total;
+    IERC20 currency;
 }
 
 /**

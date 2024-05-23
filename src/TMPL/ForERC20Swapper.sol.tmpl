@@ -8,22 +8,7 @@ pragma solidity 0.8.25;
 import {TMPLSwap} from "./TMPLSwap.sol";
 import {TMPLSwapperBase} from "./TMPLSwapperBase.gen.sol";
 
-import {ERC20Consideration} from "../ERC20Consideration.sol";
-
 /// @notice Executes the swap with consideration denominated in the ERC20 denoted by the swap's currency field.
-contract TMPLSwapper is TMPLSwapperBase, ERC20Consideration {
+contract TMPLSwapper is TMPLSwapperBase {
     constructor(TMPLSwap memory swap) TMPLSwapperBase(swap) {}
-
-    /**
-     * @dev Propagates arguments, unchanged, to ERC20Consideration._disburseFunds(), acting only to modify the function
-     * signature to accept a `TMPLSwap`.
-     */
-    function _disburseFunds(TMPLSwap memory swap, address payable feeRecipient, uint256 fee) internal override {
-        ERC20Consideration._disburseFunds(swap.parties, swap.consideration, swap.currency, feeRecipient, fee);
-    }
-
-    /// @dev Always returns true, explicitly stating that there are no checks to be performed.
-    function _postExecutionInvariantsMet(TMPLSwap memory) internal pure override returns (bool) {
-        return true;
-    }
 }

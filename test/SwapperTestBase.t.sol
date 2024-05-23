@@ -9,6 +9,7 @@ import {
     Parties,
     PayableParties,
     Consideration,
+    ERC20Consideration,
     Disbursement,
     ISwapperEvents,
     SwapStatus
@@ -372,6 +373,20 @@ library SwapperTestLib {
             c.thirdParty[i] = t._thirdParty[i];
         }
         return c;
+    }
+
+    function erc20Consideration(SwapperTestBase.TestCase memory t, IERC20 currency)
+        internal
+        pure
+        returns (ERC20Consideration memory)
+    {
+        Consideration memory base = t.consideration();
+        return ERC20Consideration({
+            thirdParty: base.thirdParty,
+            maxPlatformFee: base.maxPlatformFee,
+            total: base.total,
+            currency: currency
+        });
     }
 
     /// @dev Returns total consideration, mirroring the value in the struct returned by consideration().
