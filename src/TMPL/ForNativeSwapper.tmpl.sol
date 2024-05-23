@@ -6,7 +6,7 @@ pragma solidity 0.8.25;
  */
 
 import {TMPLSwap} from "./TMPLSwap.sol";
-import {TMPLSwapperBase} from "./TMPLSwapperBase.gen.sol";
+import {TMPLSwapperBase} from "./TMPLSwapperBase.tmpl.sol";
 
 /// @notice Executes the TMPLSwap received in the constructor.
 contract TMPLSwapper is TMPLSwapperBase {
