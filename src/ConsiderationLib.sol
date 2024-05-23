@@ -43,6 +43,14 @@ library ConsiderationLib {
     using SafeERC20 for IERC20;
 
     /**
+     * ============
+     *
+     * Native token
+     *
+     * ============
+     */
+
+    /**
      * @notice Disburses funds denominated in the chain's native token.
      * @dev If the contract's balance is greater than `c.total`, the excess is sent to `parties.seller`.
      * @param parties Funds are sent from `parties.buyer` to all third-parties, the fee recipient, and `parties.seller`.
@@ -89,6 +97,14 @@ library ConsiderationLib {
     function _postExecutionInvariantsMet(PayableParties memory, Consideration memory) internal view returns (bool) {
         return address(this).balance == 0;
     }
+
+    /**
+     * =====
+     *
+     * ERC20
+     *
+     * =====
+     */
 
     /**
      * @notice Disburses funds denominated in ERC20.
