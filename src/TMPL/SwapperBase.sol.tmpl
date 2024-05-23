@@ -27,6 +27,7 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 /// @dev Base contract for a TMPLSwapper implementation.
 contract TMPLSwapperBase is ET, SwapperBase {
     using ActionMessageLib for Message;
+    using ConsiderationLib for *;
 
     constructor(TMPLSwap memory swap) {
         Message message = ET._phoneHome();
@@ -45,17 +46,18 @@ contract TMPLSwapperBase is ET, SwapperBase {
                 revert ExcessPlatformFee(fee, swap.consideration.maxPlatformFee);
             }
 
-            // MUST remain as the last step. See ConsiderationLib documentation for rationale.
-            ConsiderationLib._disburse(swap.consideration, swap.parties, feeRecipient, fee);
+            // MUST remain as the last step before checking post-execution invariants. See ConsiderationLib
+            // documentation for rationale.
+            swap.consideration._disburse(swap.parties, feeRecipient, fee);
         } else if (action == CANCEL) {
             codeToDeploy = CANCELLED_ARTIFACT;
             // MUST remain as the last step for the same reason as _disburseFunds().
-            ConsiderationLib._cancel(swap.consideration, swap.parties);
+            swap.consideration._cancel(swap.parties);
         } else {
             revert UnsupportedAction(action);
         }
 
-        assert(ConsiderationLib._postExecutionInvariantsMet(swap.consideration, swap.parties));
+        assert(swap.consideration._postExecutionInvariantsMet(swap.parties));
 
         assembly ("memory-safe") {
             mstore(0, codeToDeploy)
