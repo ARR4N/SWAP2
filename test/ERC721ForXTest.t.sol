@@ -42,6 +42,10 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
     function _fillSelector() internal pure virtual returns (bytes4);
 
+    function _callDataToFill(ERC721TestCase memory t) internal view returns (bytes memory) {
+        return abi.encodePacked(_fillSelector(), _encodedSwapAndSalt(t, t.base.salt));
+    }
+
     /// @dev Fills the swap defined by the test case.
     function _fill(ERC721TestCase memory) internal virtual;
 
@@ -268,9 +272,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         external
         assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true}))
     {
-        token.setPostTransferCall(
-            address(factory), abi.encodePacked(_fillSelector(), _encodedSwapAndSalt(t, t.base.salt))
-        );
+        token.setPostTransferCall(address(factory), _callDataToFill(t));
 
         // The most precise way to detect a redeployment is to see that CREATE2 reverts without any return data.
         // Inspection of the trace with `forge test -vvvv` is necessary to see the [CreationCollision] error.
@@ -304,6 +306,35 @@ abstract contract ERC721ForXTest is SwapperTestBase {
             _expectedSellerBalanceAfterFill(t.base) + vandal.amount,
             "seller receives excess amount sent to contract"
         );
+    }
+
+    function testERC20FillNotPayable(ERC721TestCase memory t, uint256 value)
+        external
+        assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true}))
+    {
+        vm.skip(!_isERC20Test());
+        vm.assume(value > 0);
+
+        _beforeExecute(t);
+
+        uint256[2] memory values = [0, value];
+
+        for (uint256 i = 0; i < values.length; ++i) {
+            uint256 snap = vm.snapshot();
+
+            vm.deal(t.base.caller, values[i]);
+
+            if (values[i] > 0) {
+                vm.expectRevert(ETDeployer.Create2EmptyRevert.selector);
+            }
+            vm.prank(t.base.caller);
+            (bool success,) = address(factory).call{value: values[i]}(_callDataToFill(t));
+
+            assertTrue(success);
+            assertEq(swapStatus(_swapper(t)), values[i] == 0 ? SwapStatus.Filled : SwapStatus.Pending, "swap status");
+
+            vm.revertTo(snap);
+        }
     }
 
     function testGas() external {
