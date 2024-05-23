@@ -46,16 +46,16 @@ contract TMPLSwapperBase is ET, SwapperBase {
             }
 
             // MUST remain as the last step. See ConsiderationLib documentation for rationale.
-            ConsiderationLib._disburse(swap.parties, swap.consideration, feeRecipient, fee);
+            ConsiderationLib._disburse(swap.consideration, swap.parties, feeRecipient, fee);
         } else if (action == CANCEL) {
             codeToDeploy = CANCELLED_ARTIFACT;
             // MUST remain as the last step for the same reason as _disburseFunds().
-            ConsiderationLib._cancel(swap.parties, swap.consideration);
+            ConsiderationLib._cancel(swap.consideration, swap.parties);
         } else {
             revert UnsupportedAction(action);
         }
 
-        assert(ConsiderationLib._postExecutionInvariantsMet(swap.parties, swap.consideration));
+        assert(ConsiderationLib._postExecutionInvariantsMet(swap.consideration, swap.parties));
 
         assembly ("memory-safe") {
             mstore(0, codeToDeploy)

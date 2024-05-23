@@ -59,7 +59,7 @@ library ConsiderationLib {
      * @param fee Amount to send to `feeRecipient` from `parties.buyer`, in addition to all `c.thirdParty`
      * disbursements.
      */
-    function _disburse(PayableParties memory parties, Consideration memory c, address payable feeRecipient, uint256 fee)
+    function _disburse(Consideration memory c, PayableParties memory parties, address payable feeRecipient, uint256 fee)
         internal
     {
         if (address(this).balance < c.total) {
@@ -80,7 +80,7 @@ library ConsiderationLib {
     }
 
     /// @notice Sends the contract's entire balance to `parties.buyer`.
-    function _cancel(PayableParties memory parties, Consideration memory) internal {
+    function _cancel(Consideration memory, PayableParties memory parties) internal {
         // MUST remain as the last step for the same reason as _disburseFunds().
         _sendEntireBalance(parties.buyer);
     }
@@ -94,7 +94,7 @@ library ConsiderationLib {
     }
 
     /// @dev Returns whether the contract's remaining balance is zero.
-    function _postExecutionInvariantsMet(PayableParties memory, Consideration memory) internal view returns (bool) {
+    function _postExecutionInvariantsMet(Consideration memory, PayableParties memory) internal view returns (bool) {
         return address(this).balance == 0;
     }
 
@@ -114,7 +114,7 @@ library ConsiderationLib {
      * @param fee Amount to send to `feeRecipient` from `parties.buyer`, in addition to all `c.thirdParty`
      * disbursements.
      */
-    function _disburse(Parties memory parties, ERC20Consideration memory c, address feeRecipient, uint256 fee)
+    function _disburse(ERC20Consideration memory c, Parties memory parties, address feeRecipient, uint256 fee)
         internal
     {
         uint256 remaining = c.total;
@@ -132,10 +132,10 @@ library ConsiderationLib {
     }
 
     /// @dev Noop because no explicit cancellation required for ERC20 consideration.
-    function _cancel(Parties memory, ERC20Consideration memory) internal pure {}
+    function _cancel(ERC20Consideration memory, Parties memory) internal pure {}
 
     /// @dev Always returns true as there are no ERC20 invariants.
-    function _postExecutionInvariantsMet(Parties memory, ERC20Consideration memory) internal pure returns (bool) {
+    function _postExecutionInvariantsMet(ERC20Consideration memory, Parties memory) internal pure returns (bool) {
         return true;
     }
 }
