@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
-import {InsufficientBalance, Consideration, Parties, PayableParties} from "../src/TypesAndConstants.sol";
+import {InsufficientBalance, Parties, PayableParties} from "../src/TypesAndConstants.sol";
 
 /// @dev Implements functions expected by SwapperTestBase, assuming swap consideration is in native tokens.
 abstract contract NativeTokenTest is SwapperTestBase {

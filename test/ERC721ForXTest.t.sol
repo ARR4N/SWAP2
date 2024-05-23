@@ -5,14 +5,8 @@ import {Test, Vm} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 
-import {
-    OnlyPartyCanCancel,
-    ExcessPlatformFee,
-    Disbursement,
-    Parties,
-    SwapStatus,
-    swapStatus
-} from "../src/TypesAndConstants.sol";
+import {Disbursement} from "../src/ConsiderationLib.sol";
+import {OnlyPartyCanCancel, ExcessPlatformFee, Parties, SwapStatus, swapStatus} from "../src/TypesAndConstants.sol";
 import {ETDeployer} from "../src/ET.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";

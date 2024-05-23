@@ -10,7 +10,7 @@ import {ERC20Test} from "./ERC20Test.t.sol";
 import {ERC721TransferLib} from "../src/ERC721TransferLib.sol";
 import {MultiERC721ForERC20Swap} from "../src/MultiERC721ForERC20/MultiERC721ForERC20Swap.sol";
 import {MultiERC721ForERC20SwapperDeployer} from "../src/MultiERC721ForERC20/MultiERC721ForERC20SwapperDeployer.gen.sol";
-import {InsufficientBalance, Disbursement, Parties} from "../src/TypesAndConstants.sol";
+import {InsufficientBalance, Parties} from "../src/TypesAndConstants.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 

@@ -4,15 +4,40 @@ pragma solidity ^0.8.24;
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {
-    Consideration,
-    ERC20Consideration,
-    Disbursement,
-    Parties,
-    PayableParties,
-    InsufficientBalance
-} from "./TypesAndConstants.sol";
+import {Parties, PayableParties, InsufficientBalance} from "./TypesAndConstants.sol";
 
+/// @dev Part of `Consideration` sent to a party other than the `seller` and the platform-fee recipient.
+struct Disbursement {
+    address to;
+    uint256 amount;
+}
+
+/**
+ * @dev Fungible payment, denoted in native token. While the `buyer` of the `[Payable]Parties` is responsible for
+ * payment of `total`, the `seller` will only receive the difference between `total` and the sum of `thirdParty` +
+ * platform-fee amounts.
+ * @dev As all fields in a <T>Swap struct are immutable (otherwise the swapper address changes), the platform fee is
+ * denoted as an upper bound to allow it to be modified in favour of the `seller`.
+ */
+struct Consideration {
+    Disbursement[] thirdParty;
+    uint256 maxPlatformFee;
+    uint256 total;
+}
+
+/// @dev Identical to `Consideration` except for the addition of the `currency` field.
+struct ERC20Consideration {
+    Disbursement[] thirdParty;
+    uint256 maxPlatformFee;
+    uint256 total;
+    IERC20 currency;
+}
+
+/**
+ * @notice Disburses `Consideration`, denominated in either native token or ERC20.
+ * @dev There MUST NOT be any interactions (in the CEI sense) between calls to `_disburse()` and
+ * `_postExecutionInvariantsMet() as this would open native-token swaps to griefing by breaking the invariant.
+ */
 library ConsiderationLib {
     using Address for address payable;
     using SafeERC20 for IERC20;

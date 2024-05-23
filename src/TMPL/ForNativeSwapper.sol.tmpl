@@ -8,8 +8,6 @@ pragma solidity 0.8.25;
 import {TMPLSwap} from "./TMPLSwap.sol";
 import {TMPLSwapperBase} from "./TMPLSwapperBase.gen.sol";
 
-import {PayableParties} from "../TypesAndConstants.sol";
-
 /// @notice Executes the swap with consideration denominated in the chain's native toiken.
 contract TMPLSwapper is TMPLSwapperBase {
     constructor(TMPLSwap memory swap) payable TMPLSwapperBase(swap) {}

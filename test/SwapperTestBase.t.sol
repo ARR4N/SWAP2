@@ -5,15 +5,8 @@ import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 
 import {SWAP2} from "../src/SWAP2.sol";
-import {
-    Parties,
-    PayableParties,
-    Consideration,
-    ERC20Consideration,
-    Disbursement,
-    ISwapperEvents,
-    SwapStatus
-} from "../src/TypesAndConstants.sol";
+import {Disbursement, Consideration, ERC20Consideration} from "../src/ConsiderationLib.sol";
+import {Parties, PayableParties, ISwapperEvents, SwapStatus} from "../src/TypesAndConstants.sol";
 
 import {ERC721, IERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
