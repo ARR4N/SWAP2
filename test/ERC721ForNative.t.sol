@@ -10,7 +10,7 @@ import {NativeTokenTest} from "./NativeTokenTest.t.sol";
 import {ERC721TransferLib} from "../src/ERC721TransferLib.sol";
 import {ERC721ForNativeSwap} from "../src/ERC721ForNative/ERC721ForNativeSwap.sol";
 import {ERC721ForNativeSwapperDeployer} from "../src/ERC721ForNative/ERC721ForNativeSwapperDeployer.gen.sol";
-import {InsufficientBalance, Disbursement, Parties} from "../src/TypesAndConstants.sol";
+import {InsufficientBalance, Parties} from "../src/TypesAndConstants.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 

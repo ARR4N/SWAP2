@@ -11,7 +11,7 @@ import {ERC721TransferLib} from "../src/ERC721TransferLib.sol";
 import {MultiERC721ForNativeSwap} from "../src/MultiERC721ForNative/MultiERC721ForNativeSwap.sol";
 import {MultiERC721ForNativeSwapperDeployer} from
     "../src/MultiERC721ForNative/MultiERC721ForNativeSwapperDeployer.gen.sol";
-import {InsufficientBalance, Disbursement, Parties} from "../src/TypesAndConstants.sol";
+import {InsufficientBalance, Parties} from "../src/TypesAndConstants.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 

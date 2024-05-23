@@ -5,14 +5,8 @@ import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 
 import {SWAP2} from "../src/SWAP2.sol";
-import {
-    Parties,
-    PayableParties,
-    Consideration,
-    Disbursement,
-    ISwapperEvents,
-    SwapStatus
-} from "../src/TypesAndConstants.sol";
+import {Disbursement, Consideration, ERC20Consideration} from "../src/ConsiderationLib.sol";
+import {Parties, PayableParties, ISwapperEvents, SwapStatus} from "../src/TypesAndConstants.sol";
 
 import {ERC721, IERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
@@ -372,6 +366,25 @@ library SwapperTestLib {
             c.thirdParty[i] = t._thirdParty[i];
         }
         return c;
+    }
+
+    /**
+     * @dev Returns the test case's `ERC20Consideration` struct.
+     * @dev If only the total is required, use total() instead.
+     * @param currency Address of the ERC20 in which the consideration is denominated.
+     */
+    function erc20Consideration(SwapperTestBase.TestCase memory t, IERC20 currency)
+        internal
+        pure
+        returns (ERC20Consideration memory)
+    {
+        Consideration memory base = t.consideration();
+        return ERC20Consideration({
+            thirdParty: base.thirdParty,
+            maxPlatformFee: base.maxPlatformFee,
+            total: base.total,
+            currency: currency
+        });
     }
 
     /// @dev Returns total consideration, mirroring the value in the struct returned by consideration().

@@ -9,6 +9,7 @@ import {TMPLSwap} from "./TMPLSwap.sol";
 
 import {ERC721TransferLib} from "../ERC721TransferLib.sol";
 import {ET, Message} from "../ET.sol";
+import {ConsiderationLib} from "../ConsiderationLib.sol";
 import {SwapperBase} from "../SwapperBase.sol";
 import {
     Action,
@@ -24,8 +25,9 @@ import {
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 /// @dev Base contract for a TMPLSwapper implementation.
-abstract contract TMPLSwapperBase is ET, SwapperBase {
+contract TMPLSwapperBase is ET, SwapperBase {
     using ActionMessageLib for Message;
+    using ConsiderationLib for *;
 
     constructor(TMPLSwap memory swap) {
         Message message = ET._phoneHome();
@@ -44,33 +46,22 @@ abstract contract TMPLSwapperBase is ET, SwapperBase {
                 revert ExcessPlatformFee(fee, swap.consideration.maxPlatformFee);
             }
 
-            // MUST remain as the last step. See function comment for rationale.
-            _disburseFunds(swap, feeRecipient, fee);
+            // MUST remain as the last step before checking post-execution invariants. See ConsiderationLib
+            // documentation for rationale.
+            swap.consideration._disburse(swap.parties, feeRecipient, fee);
         } else if (action == CANCEL) {
             codeToDeploy = CANCELLED_ARTIFACT;
             // MUST remain as the last step for the same reason as _disburseFunds().
-            _cancel(swap.parties);
+            swap.consideration._cancel(swap.parties);
         } else {
             revert UnsupportedAction(action);
         }
 
-        assert(_postExecutionInvariantsMet(swap));
+        assert(swap.consideration._postExecutionInvariantsMet(swap.parties));
 
         assembly ("memory-safe") {
             mstore(0, codeToDeploy)
             return(0, 3)
         }
     }
-
-    /**
-     * @dev Disburses funds as defined by `swap.consideration`. This is guaranteed to be the last function called
-     * before the call to _postExecutionInvariantsMet(), allowing for coupled logic between the two.
-     */
-    function _disburseFunds(TMPLSwap memory swap, address payable feeRecipient, uint256 fee) internal virtual;
-
-    /**
-     * @dev Called at the end of the constructor, which reverts if this function returns false.
-     * @return Whether all post-execution invariants hold.
-     */
-    function _postExecutionInvariantsMet(TMPLSwap memory) internal virtual returns (bool);
 }
