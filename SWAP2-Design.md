@@ -2,8 +2,8 @@
 
 ## Summary
 
-SWAP2 is a protocol for OTC NFT trading using ephemeral, CREATE2-deployed contracts.
-Single-use contracts, cryptographically coupled to specific trades, limit `ERC721.setApprovalForAll()` to a least-privileges scope and also automatically expire.
+SWAP2 is a protocol for OTC NFT trading using ephemeral, CREATE2-deployed contracts with minimal gas overhead.
+Single-use contracts, cryptographically coupled to specific trades, limit `ERC721.setApprovalForAll()` to a least-privileges scope and also automatically expire after use.
 The need for per-trade approvals is a deliberate design trade-off to provide increased security for high-value, low-volume trades.
 
 ## Requirements
