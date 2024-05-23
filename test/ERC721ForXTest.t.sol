@@ -135,11 +135,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
     function testHappyPath(ERC721TestCase memory t)
         public
-        assumeValidTest(t.base)
-        assumePaymentsValid(t.base)
-        assumeSufficientPayment(t.base)
-        assumeValidPlatformFee(t.base)
-        assumeApproving(t.base)
+        assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true}))
         returns (address swapper)
     {
         return _testFill(t, "");
@@ -147,11 +143,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
     function testNotApproved(ERC721TestCase memory t)
         external
-        assumeValidTest(t.base)
-        assumePaymentsValid(t.base)
-        assumeSufficientPayment(t.base)
-        assumeValidPlatformFee(t.base)
-        assumeNotApproving(t.base) // <----- NB
+        assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: true, approving: false}))
     {
         address swapper = _swapper(t);
         bytes memory err = abi.encodeWithSelector(IERC721Errors.ERC721InsufficientApproval.selector, swapper, t.tokenId);
@@ -160,22 +152,14 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
     function testInsufficientBalance(ERC721TestCase memory t)
         external
-        assumeValidTest(t.base)
-        assumePaymentsValid(t.base)
-        assumeInsufficientPayment(t.base) // <----- NB
-        assumeValidPlatformFee(t.base)
-        assumeApproving(t.base)
+        assumeValidTest(t.base, Assumptions({sufficientPayment: false, validPlatformFee: true, approving: true}))
     {
         _testFill(t, _insufficientBalanceError(t.base));
     }
 
     function testExcessPlatformFee(ERC721TestCase memory t)
         external
-        assumeValidTest(t.base)
-        assumePaymentsValid(t.base)
-        assumeSufficientPayment(t.base)
-        assumeExcessPlatformFee(t.base) // <----- NB
-        assumeApproving(t.base)
+        assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: false, approving: true}))
     {
         bytes memory err = abi.encodeWithSelector(
             ExcessPlatformFee.selector, t.base.platformFee(), t.base.consideration().maxPlatformFee
@@ -201,11 +185,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
     function testPropose(ERC721TestCase memory t)
         external
-        assumeValidTest(t.base)
-        assumePaymentsValid(t.base)
-        assumeSufficientPayment(t.base)
-        assumeValidPlatformFee(t.base)
-        assumeApproving(t.base)
+        assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true}))
     {
         vm.recordLogs();
         (bytes32 salt, address swapper) = _propose(t);
@@ -235,7 +215,10 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         }
     }
 
-    function testCancel(ERC721TestCase memory t, address vandal, bool asSeller) external assumeValidTest(t.base) {
+    function testCancel(ERC721TestCase memory t, address vandal, bool asSeller, Assumptions memory assume)
+        external
+        assumeValidTest(t.base, assume) // the ability to cancel MUST be independent of any Assumptions
+    {
         address swapper = _beforeExecute(t);
 
         TestCase memory test = t.base;
@@ -283,11 +266,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
     function testNonReentrant(ERC721TestCase memory t)
         external
-        assumeValidTest(t.base)
-        assumePaymentsValid(t.base)
-        assumeSufficientPayment(t.base)
-        assumeValidPlatformFee(t.base)
-        assumeApproving(t.base)
+        assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true}))
     {
         token.setPostTransferCall(
             address(factory), abi.encodePacked(_fillSelector(), _encodedSwapAndSalt(t, t.base.salt))
@@ -300,11 +279,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
     function testGriefNativeTokenInvariant(ERC721TestCase memory t, uint8 vandalIndex)
         external
-        assumeValidTest(t.base)
-        assumePaymentsValid(t.base)
-        assumeSufficientPayment(t.base)
-        assumeValidPlatformFee(t.base)
-        assumeApproving(t.base)
+        assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true}))
     {
         vm.skip(_isERC20Test());
         // Native-token consideration has a post-execution invariant of a zero balance, which could open us up to a
