@@ -308,6 +308,13 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         );
     }
 
+    /**
+    * @dev The generated `<T>ForERC20Deployer` contracts have payable `fill()` functions because of simple identifier
+    * replacement. Being payable is unnecessary and could (but doesn't) risk accidental locking of funds. There are two
+    * options: (1) remove the modifier at the expense of a more complex templating system; or (2) prove that funds can't
+    * be locked (i.e. this test) because they're forwarded to a non-payable constructor. While the test adds some degree
+    * of complication, the alternative is reduced simplicity of production code.
+    */
     function testERC20FillNotPayable(ERC721TestCase memory t, uint256 value)
         external
         assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true}))
@@ -317,6 +324,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
         _beforeExecute(t);
 
+        // Making the identical call with zero and non-zero values demonstrates the cause of the expected revert.
         uint256[2] memory values = [0, value];
 
         for (uint256 i = 0; i < values.length; ++i) {
@@ -325,12 +333,14 @@ abstract contract ERC721ForXTest is SwapperTestBase {
             vm.deal(t.base.caller, values[i]);
 
             if (values[i] > 0) {
-                vm.expectRevert(ETDeployer.Create2EmptyRevert.selector);
+                vm.expectRevert(ETDeployer.Create2EmptyRevert.selector); // constructor reverts
             }
             vm.prank(t.base.caller);
-            (bool success,) = address(factory).call{value: values[i]}(_callDataToFill(t));
+            (bool revertsAsExpected,) = address(factory).call{value: values[i]}(_callDataToFill(t));
 
-            assertTrue(success);
+            // See: https://book.getfoundry.sh/cheatcodes/expect-revert#:~:text=Gotcha%3A%20Usage%20with%20low%2Dlevel%20calls
+            // Permalink: https://github.com/foundry-rs/book/blob/6667a3703f67c01fbd38ae9cbb14bb409f3b532f/src/cheatcodes/expect-revert.md#:~:text=Gotcha%3A%20Usage%20with%20low%2Dlevel%20calls
+            assertTrue(revertsAsExpected);
             assertEq(swapStatus(_swapper(t)), values[i] == 0 ? SwapStatus.Filled : SwapStatus.Pending, "swap status");
 
             vm.revertTo(snap);
