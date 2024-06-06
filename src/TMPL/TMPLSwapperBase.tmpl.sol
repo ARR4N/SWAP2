@@ -52,7 +52,7 @@ contract TMPLSwapperBase is ET, SwapperBase {
         } else if (action == CANCEL) {
             codeToDeploy = CANCELLED_ARTIFACT;
             // MUST remain as the last step for the same reason as _disburseFunds().
-            swap.consideration._cancel(swap.parties);
+            swap.consideration._cancel(swap.parties, message.escrow());
         } else {
             revert UnsupportedAction(action);
         }

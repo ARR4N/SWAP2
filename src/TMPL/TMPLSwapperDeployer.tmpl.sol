@@ -40,7 +40,7 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
         if (msg.sender != swap.parties.seller && msg.sender != swap.parties.buyer) {
             revert OnlyPartyCanCancel();
         }
-        address a = _deploy(_bytecode(swap), 0, salt, CANCEL_MSG);
+        address a = _deploy(_bytecode(swap), 0, salt, ActionMessageLib.cancelWithEscrow(_escrow()));
         emit Cancelled(a);
         return a;
     }

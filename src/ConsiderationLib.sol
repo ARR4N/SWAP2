@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IEscrow} from "./Escrow.sol";
 import {Parties, PayableParties, InsufficientBalance} from "./TypesAndConstants.sol";
 
 /// @dev Part of `Consideration` sent to a party other than the `seller` and the platform-fee recipient.
@@ -66,6 +67,11 @@ library ConsiderationLib {
             revert InsufficientBalance(address(this).balance, c.total);
         }
 
+        // Note: we aren't concerned about griefing attacks from any recipients when fill()ing a swap because:
+        // - Fee recipient is the platform-specified address
+        // - Third parties are completely under the control of the parties
+        // - Seller could, even more easily, stop execution by either cancel()ing or un-approving the swapper address
+
         feeRecipient.sendValue(fee);
 
         Disbursement[] memory tP = c.thirdParty;
@@ -76,21 +82,27 @@ library ConsiderationLib {
         // MUST remain as the last step to guarantee that _postExecutionInvariantsMet() returns true. This means that
         // the only actor capable of griefing the invariants is the seller (by returning some of these funds), which
         // would only act to harm themselves.
-        _sendEntireBalance(parties.seller);
-    }
-
-    /// @notice Sends the contract's entire balance to `parties.buyer`.
-    function _cancel(Consideration memory, PayableParties memory parties) internal {
-        // MUST remain as the last step for the same reason as _disburseFunds().
-        _sendEntireBalance(parties.buyer);
+        parties.seller.sendValue(address(this).balance);
     }
 
     /**
-     * @dev Sends the entirety of the contract's balance to the specified address. As this is called as the final step
-     * in all paths, the post-execution invariant of a zero balance is ensured.
+     * @notice Sends the contract's entire balance to `parties.buyer`.
+     * @dev Unlike `_disburse()` we have to protect against the buyer griefing cancellation so funds will be escrowed
+     * iff the initial sending fails. Although the seller could void the swap by removing required approvals, the
+     * explicit cancelling should still work as intended.
      */
-    function _sendEntireBalance(address payable to) private {
-        to.sendValue(address(this).balance);
+    function _cancel(Consideration memory, PayableParties memory parties, IEscrow escrow) internal {
+        // MUST remain as the last step for the same reason as _disburseFunds().
+        _sendOrEscrow(parties.buyer, address(this).balance, escrow);
+    }
+
+    function _sendOrEscrow(address payable to, uint256 amount, IEscrow escrow) internal {
+        // 20k for a fresh SSTORE and an arbitrary 10k overhead
+        (bool success,) = to.call{value: amount, gas: 30_000}("");
+        if (success) {
+            return;
+        }
+        escrow.deposit{value: amount}(to);
     }
 
     /// @dev Returns whether the contract's remaining balance is zero.
@@ -132,7 +144,7 @@ library ConsiderationLib {
     }
 
     /// @dev Noop because no explicit cancellation required for ERC20 consideration.
-    function _cancel(ERC20Consideration memory, Parties memory) internal pure {}
+    function _cancel(ERC20Consideration memory, Parties memory, IEscrow) internal pure {}
 
     /// @dev Always returns true as there are no ERC20 invariants.
     function _postExecutionInvariantsMet(ERC20Consideration memory, Parties memory) internal pure returns (bool) {

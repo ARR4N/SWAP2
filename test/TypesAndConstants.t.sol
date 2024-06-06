@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 
+import {IEscrow} from "../src/Escrow.sol";
 import {Message} from "../src/ET.sol";
 import {Action, ActionMessageLib, FILL, CANCEL, Parties, PayableParties} from "../src/TypesAndConstants.sol";
 import {SwapperBase} from "../src/SwapperBase.sol";
@@ -36,7 +37,15 @@ contract TypesTest is Test, SwapperBase {
         assertTrue(m.action() == FILL, "FILL action");
 
         (address payable gotRecipient, uint16 gotBasisPoints) = m.feeConfig();
-        assertEq(feeRecipient, gotRecipient);
-        assertEq(basisPoints, gotBasisPoints);
+        assertEq(feeRecipient, gotRecipient, "recipient address recovered");
+        assertEq(basisPoints, gotBasisPoints, "basis points recovered");
+    }
+
+    function testEscrowRoundTrip(address escrow) public {
+        Message m = ActionMessageLib.cancelWithEscrow(IEscrow(escrow));
+
+        assertTrue(m.action() == CANCEL, "CANCEL action");
+        address gotEscrow = address(m.escrow());
+        assertEq(escrow, gotEscrow, "escrow address recovered");
     }
 }

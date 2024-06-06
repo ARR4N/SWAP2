@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 
+import {Escrow} from "../src/Escrow.sol";
 import {SWAP2} from "../src/SWAP2.sol";
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
@@ -14,7 +15,7 @@ contract OwnerTest is Test {
         vm.assume(initial != address(0));
         vm.assume(newOwner != address(0));
 
-        SWAP2 s = new SWAP2(initial);
+        SWAP2 s = new SWAP2(initial, new Escrow());
 
         vm.prank(initial);
         s.transferOwnership(newOwner);
@@ -33,7 +34,7 @@ contract OwnerTest is Test {
         vm.assume(owner != address(0));
         vm.assume(owner != vandal);
 
-        SWAP2 s = new SWAP2(owner);
+        SWAP2 s = new SWAP2(owner, new Escrow());
 
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, vandal));
         vm.prank(vandal);

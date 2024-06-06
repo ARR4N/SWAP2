@@ -6,6 +6,7 @@ import {console2} from "forge-std/console2.sol";
 
 import {SWAP2} from "../src/SWAP2.sol";
 import {Disbursement, Consideration, ERC20Consideration} from "../src/ConsiderationLib.sol";
+import {Escrow, IEscrowEvents} from "../src/Escrow.sol";
 import {Parties, PayableParties, ISwapperEvents, SwapStatus} from "../src/TypesAndConstants.sol";
 
 import {ERC721, IERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -47,7 +48,7 @@ contract Token is ERC721 {
     }
 }
 
-interface ITestEvents is ISwapperEvents {
+interface ITestEvents is ISwapperEvents, IEscrowEvents {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 }
 
@@ -69,7 +70,7 @@ abstract contract SwapperTestBase is Test, ITestEvents {
     address immutable owner = makeAddr("owner");
 
     function setUp() public virtual {
-        factory = new SWAP2(owner);
+        factory = new SWAP2(owner, new Escrow());
         vm.label(address(factory), "SWAP2");
         token = new Token();
         vm.label(address(token), "FakeERC721");

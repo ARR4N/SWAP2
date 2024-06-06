@@ -7,6 +7,7 @@ import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 
 import {Disbursement} from "../src/ConsiderationLib.sol";
 import {OnlyPartyCanCancel, ExcessPlatformFee, Parties, SwapStatus, swapStatus} from "../src/TypesAndConstants.sol";
+import {Escrow} from "../src/Escrow.sol";
 import {ETDeployer} from "../src/ET.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
@@ -16,6 +17,19 @@ contract FundsReflector {
     receive() external payable {
         (bool ok,) = msg.sender.call{value: msg.value}("");
         assert(ok);
+    }
+}
+
+/// @dev Contract that reverts when receiving funds, used for tests of griefing.
+contract FundsRejector {
+    bool private _allowReceive;
+
+    function allowReceive(bool a) external {
+        _allowReceive = a;
+    }
+
+    receive() external payable {
+        assert(_allowReceive);
     }
 }
 
@@ -345,6 +359,53 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
             vm.revertTo(snap);
         }
+    }
+
+    function testNativeCancelEscrow(ERC721TestCase memory t, uint256 refund, bytes32 buyerSalt)
+        external
+        assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true}))
+    {
+        vm.skip(_isERC20Test());
+        vm.assume(refund > 0);
+        TestCase memory test = t.base;
+
+        FundsRejector buyer = new FundsRejector{salt: buyerSalt}();
+        test.parties.buyer = address(buyer);
+        vm.assume(test.buyer().balance == 0);
+
+        vm.deal(_swapper(t), refund);
+
+        Escrow escrow = factory.escrow();
+        vm.assume(address(escrow).balance == 0);
+
+        {
+            // Without escrow, cancel() would now fail, griefing the seller.
+            buyer.allowReceive(false);
+
+            vm.expectEmit(true, true, true, true, address(escrow));
+            emit Deposit(test.buyer(), refund);
+            vm.expectEmit(true, true, true, true, address(factory));
+            emit Cancelled(_swapper(t));
+            _cancelAs(t, test.seller());
+
+            assertEq(swapStatus(_swapper(t)), SwapStatus.Cancelled, "swapper status cancelled");
+            assertEq(escrow.balance(test.buyer()), refund, "escrow contract receives refund");
+        }
+
+        {
+            buyer.allowReceive(true);
+
+            vm.expectEmit(true, true, true, true, address(escrow));
+            emit Withdrawal(test.buyer(), refund);
+            vm.prank(test.buyer());
+            escrow.withdraw();
+
+            assertEq(test.buyer().balance, refund, "buyer ultimately receives refund");
+            assertEq(escrow.balance(test.buyer()), 0);
+        }
+
+        vm.expectRevert(abi.encodeWithSelector(Escrow.ZeroBalance.selector, address(buyer)));
+        escrow.withdraw(test.buyer());
     }
 
     function testGas() external {
