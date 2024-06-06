@@ -5,6 +5,30 @@ import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 
 import {Escrow, IEscrowEvents} from "../src/Escrow.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+
+contract ReentryWithdrawer {
+    Escrow private immutable _escrow;
+    bool private _reenter;
+
+    constructor(Escrow escrow) {
+        _escrow = escrow;
+    }
+
+    receive() external payable {
+        if (_reenter) {
+            _escrow.withdraw();
+        }
+    }
+
+    function withdraw() external {
+        _escrow.withdraw();
+    }
+
+    function reenter(bool b) external {
+        _reenter = b;
+    }
+}
 
 contract EscrowTest is Test, IEscrowEvents {
     Escrow escrow = new Escrow();
@@ -75,6 +99,7 @@ contract EscrowTest is Test, IEscrowEvents {
             vm.expectEmit(true, true, true, true, address(escrow));
             emit Withdrawal(b.addr, expectedTotal);
         }
+
         if (b.withdrawAsBeneficiary) {
             vm.prank(b.addr);
             escrow.withdraw();
@@ -104,5 +129,26 @@ contract EscrowTest is Test, IEscrowEvents {
         vm.expectEmit(true, true, true, true, address(escrow));
         emit Withdrawal(beneficiary, total);
         escrow.withdraw(beneficiary);
+    }
+
+    function testNonReentrant(uint256 amount, bytes32 salt) public {
+        vm.assume(amount > 0);
+
+        ReentryWithdrawer thief = new ReentryWithdrawer{salt: salt}(escrow);
+        address payable addr = payable(thief);
+        vm.assume(addr.balance == 0);
+
+        vm.deal(address(this), amount);
+        escrow.deposit{value: amount}(addr);
+
+        thief.reenter(true);
+        vm.expectRevert(Address.FailedInnerCall.selector);
+        thief.withdraw();
+
+        // The OpenZeppelin failure mode hides the underlying cause by not propagating the revert error. The closest we
+        // can get to proving the source is by repeating the identical action and showing that it no longer reverts.
+        thief.reenter(false);
+        thief.withdraw();
+        assertEq(addr.balance, amount, "withdraw() succeeds when no longer reentering");
     }
 }
