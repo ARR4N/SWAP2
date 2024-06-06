@@ -19,6 +19,8 @@ import {
     MultiERC721ForERC20SwapperProposer
 } from "./MultiERC721ForERC20/MultiERC721ForERC20SwapperDeployer.gen.sol";
 
+import {Escrow, IEscrow} from "./Escrow.sol";
+
 import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 contract SWAP2Deployer is
@@ -62,6 +64,12 @@ contract SWAP2Deployer is
     function _platformFeeConfig() internal view override returns (address payable, uint16) {
         PlatformFeeConfig memory config = feeConfig;
         return (config.recipient, config.basisPoints);
+    }
+
+    Escrow public immutable escrow = new Escrow();
+
+    function _escrow() internal view override returns (IEscrow) {
+        return escrow;
     }
 }
 

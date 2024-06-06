@@ -2,6 +2,7 @@
 // Copyright 2024 Divergence Tech Ltd.
 pragma solidity ^0.8.24;
 
+import {IEscrow} from "./Escrow.sol";
 import {Message} from "./ET.sol";
 
 /**
@@ -71,6 +72,10 @@ library ActionMessageLib {
         return Message.wrap(bytes32(abi.encodePacked(FILL, feeRecipient, basisPoints)));
     }
 
+    function cancelWithEscrow(IEscrow escrow_) internal pure returns (Message) {
+        return Message.wrap(bytes32(abi.encodePacked(CANCEL, escrow_)));
+    }
+
     /// @dev Extracts the `Action` from the `Message`, assuming that it is the prefix.
     function action(Message m) internal pure returns (Action) {
         return Action.wrap(bytes4(Message.unwrap(m)));
@@ -78,9 +83,15 @@ library ActionMessageLib {
 
     /// @dev Inverse of fillWithFeeConfig().
     function feeConfig(Message m) internal pure returns (address payable feeRecipient, uint16 basisPoints) {
+        assert(action(m) == FILL);
         uint256 u = uint256(Message.unwrap(m));
         feeRecipient = payable(address(bytes20(bytes28(uint224(u)))));
         basisPoints = uint16(bytes2(bytes8(uint64(u))));
+    }
+
+    function escrow(Message m) internal pure returns (IEscrow) {
+        assert(action(m) == CANCEL);
+        return IEscrow(address(bytes20(bytes28(uint224(uint256(Message.unwrap(m)))))));
     }
 }
 
