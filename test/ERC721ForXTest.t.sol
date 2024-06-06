@@ -323,12 +323,12 @@ abstract contract ERC721ForXTest is SwapperTestBase {
     }
 
     /**
-    * @dev The generated `<T>ForERC20Deployer` contracts have payable `fill()` functions because of simple identifier
-    * replacement. Being payable is unnecessary and could (but doesn't) risk accidental locking of funds. There are two
-    * options: (1) remove the modifier at the expense of a more complex templating system; or (2) prove that funds can't
-    * be locked (i.e. this test) because they're forwarded to a non-payable constructor. While the test adds some degree
-    * of complication, the alternative is reduced simplicity of production code.
-    */
+     * @dev The generated `<T>ForERC20Deployer` contracts have payable `fill()` functions because of simple identifier
+     * replacement. Being payable is unnecessary and could (but doesn't) risk accidental locking of funds. There are two
+     * options: (1) remove the modifier at the expense of a more complex templating system; or (2) prove that funds can't
+     * be locked (i.e. this test) because they're forwarded to a non-payable constructor. While the test adds some degree
+     * of complication, the alternative is reduced simplicity of production code.
+     */
     function testERC20FillNotPayable(ERC721TestCase memory t, uint256 value)
         external
         assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true}))
