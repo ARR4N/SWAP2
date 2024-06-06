@@ -20,6 +20,7 @@ import {
 } from "./MultiERC721ForERC20/MultiERC721ForERC20SwapperDeployer.gen.sol";
 
 import {Escrow, IEscrow} from "./Escrow.sol";
+import {SwapperDeployerBase} from "./SwapperDeployerBase.sol";
 
 import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
@@ -30,11 +31,16 @@ contract SWAP2Deployer is
     MultiERC721ForNativeSwapperDeployer,
     MultiERC721ForERC20SwapperDeployer
 {
+    /// @notice Escrow contract used in case of failed push payments.
+    Escrow public immutable escrow;
+
     /**
      * @param initialOwner Initial owner of the contract. SHOULD be a multisig as this address can modify platform-fee
      * configuration.
      */
-    constructor(address initialOwner) Ownable(initialOwner) {}
+    constructor(address initialOwner, Escrow escrow_) Ownable(initialOwner) {
+        escrow = escrow_;
+    }
 
     /// @dev Packs platform-fee configuration into a single word.
     struct PlatformFeeConfig {
@@ -66,8 +72,7 @@ contract SWAP2Deployer is
         return (config.recipient, config.basisPoints);
     }
 
-    Escrow public immutable escrow = new Escrow();
-
+    /// @inheritdoc SwapperDeployerBase
     function _escrow() internal view override returns (IEscrow) {
         return escrow;
     }
@@ -98,7 +103,7 @@ contract SWAP2Proposer is SWAP2ProposerBase {
 
 /// @notice A combined SWAP2{Deployer,Proposer}.
 contract SWAP2 is SWAP2Deployer, SWAP2ProposerBase {
-    constructor(address initialOwner) SWAP2Deployer(initialOwner) {}
+    constructor(address initialOwner, Escrow escrow) SWAP2Deployer(initialOwner, escrow) {}
 
     /// @dev The current contract is the swapper deployer for all types.
     function _swapperDeployer() internal view override returns (address) {

@@ -12,5 +12,9 @@ abstract contract SwapperDeployerBase {
      */
     function _platformFeeConfig() internal view virtual returns (address payable recipient, uint16 basisPoints);
 
+    /**
+     * @return Address of an IEscrow contract, for possible use when native-token `cancel()` fails to reimburse the
+     * buyer.
+     */
     function _escrow() internal view virtual returns (IEscrow);
 }

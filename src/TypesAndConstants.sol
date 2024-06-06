@@ -72,6 +72,7 @@ library ActionMessageLib {
         return Message.wrap(bytes32(abi.encodePacked(FILL, feeRecipient, basisPoints)));
     }
 
+    /// @dev Appends the `CANCEL` action with the address of an `IEscrow` contract.
     function cancelWithEscrow(IEscrow escrow_) internal pure returns (Message) {
         return Message.wrap(bytes32(abi.encodePacked(CANCEL, escrow_)));
     }
@@ -81,7 +82,7 @@ library ActionMessageLib {
         return Action.wrap(bytes4(Message.unwrap(m)));
     }
 
-    /// @dev Inverse of fillWithFeeConfig().
+    /// @dev Inverse of `fillWithFeeConfig()`.
     function feeConfig(Message m) internal pure returns (address payable feeRecipient, uint16 basisPoints) {
         assert(action(m) == FILL);
         uint256 u = uint256(Message.unwrap(m));
@@ -89,6 +90,7 @@ library ActionMessageLib {
         basisPoints = uint16(bytes2(bytes8(uint64(u))));
     }
 
+    /// @dev Inverse of `cancelWithEscrow()`.
     function escrow(Message m) internal pure returns (IEscrow) {
         assert(action(m) == CANCEL);
         return IEscrow(address(bytes20(bytes28(uint224(uint256(Message.unwrap(m)))))));
