@@ -8,7 +8,7 @@ pragma solidity 0.8.25;
 import {TMPLSwap} from "./TMPLSwap.sol";
 
 import {ERC721TransferLib} from "../ERC721TransferLib.sol";
-import {ET, Message} from "../ET.sol";
+import {IETHome, Message} from "../ET.sol";
 import {ConsiderationLib} from "../ConsiderationLib.sol";
 import {SwapperBase} from "../SwapperBase.sol";
 import {
@@ -25,12 +25,12 @@ import {
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 /// @dev Base contract for a TMPLSwapper implementation.
-contract TMPLSwapperBase is ET, SwapperBase {
+contract TMPLSwapperBase is SwapperBase {
     using ActionMessageLib for Message;
     using ConsiderationLib for *;
 
     constructor(TMPLSwap memory swap) {
-        Message message = ET._phoneHome();
+        Message message = IETHome(msg.sender).etMessage();
         Action action = message.action();
 
         bytes3 codeToDeploy;
