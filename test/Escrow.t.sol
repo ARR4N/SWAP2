@@ -44,7 +44,7 @@ contract EscrowTest is Test, IEscrowEvents {
 
     function testDepositAndWithdraw(address depositor, address withdrawer, Beneficiary[10] memory bs) public {
         vm.assume(address(escrow).balance == 0);
-        vm.assume(depositor != address(0));
+        _assumeNonContractWithZeroBalance(depositor);
         vm.deal(depositor, type(uint256).max);
 
         uint256[] memory totals = new uint256[](bs.length);
@@ -65,7 +65,7 @@ contract EscrowTest is Test, IEscrowEvents {
                 escrow.deposit{value: amounts[j]}(addr);
 
                 totals[i] += amounts[j];
-                assertEq(escrow.balance(addr), totals[i], "balance after single deposit");
+                assertEq(escrow.balance(addr), totals[i], "balance after nth single deposit");
             }
 
             if (!bs[i].withdrawEarly) {

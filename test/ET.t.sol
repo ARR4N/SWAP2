@@ -75,7 +75,7 @@ contract ETTest is Test {
 
     function _recreate(bytes32 salt, Message message) internal {
         vm.expectRevert(ETDeployer.Create2EmptyRevert.selector);
-        deployer.deploy(salt, message);
+        deployer.deploy{gas: 50_000}(salt, message);
     }
 
     function testArbitraryRevert(bytes32 salt) public {
