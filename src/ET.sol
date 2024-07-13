@@ -35,24 +35,20 @@ interface IETHome {
  * @dev Predictor of ET contract addresses. Little more than a wrapper around OpenZeppelin's Create2 library.
  * @author Arran Schlosberg (@divergencearran / github.com/arr4n)
  */
-contract ETPredictor {
+library ETPredictor {
     /**
      * @dev Convenience wrapper around OpenZeppelin's Create2.computeAddress() to match the argument signature of
      * `ETDeployer._deploy()`, assuming `address(this)` as the `deployer`.
      */
-    function _predictDeploymentAddress(bytes memory bytecode, bytes32 salt) internal view returns (address) {
-        return _predictDeploymentAddress(bytecode, salt, address(this));
+    function deploymentAddress(bytes memory bytecode, bytes32 salt) internal view returns (address) {
+        return deploymentAddress(bytecode, salt, address(this));
     }
 
     /**
      * @dev Convenience wrapper around OpenZeppelin's Create2.computeAddress() to mirror the argument signature of
      * `ETDeployer._deploy()`, with the exception of an additional `deployer` address.
      */
-    function _predictDeploymentAddress(bytes memory bytecode, bytes32 salt, address deployer)
-        internal
-        pure
-        returns (address)
-    {
+    function deploymentAddress(bytes memory bytecode, bytes32 salt, address deployer) internal pure returns (address) {
         return Create2.computeAddress(salt, keccak256(bytecode), deployer);
     }
 }
@@ -61,7 +57,7 @@ contract ETPredictor {
  * @dev Deployer of ET contracts, responsible for storing Messages and making them available to deployed contracts.
  * @author Arran Schlosberg (@divergencearran / github.com/arr4n)
  */
-contract ETDeployer is IETHome, ETPredictor {
+contract ETDeployer is IETHome {
     error PredictedAddressMismatch(address deployed, address predicted);
     /// @dev Thrown when create2() fails with returndatasize()==0, for precise error-path testing with expectRevert().
     error Create2EmptyRevert();
@@ -110,7 +106,7 @@ contract ETDeployer is IETHome, ETPredictor {
     }
 
     function _deploy(bytes memory bytecode, uint256 value, bytes32 salt, Message message) internal returns (address) {
-        return _deploy(_predictDeploymentAddress(bytecode, salt), bytecode, value, salt, message);
+        return _deploy(ETPredictor.deploymentAddress(bytecode, salt), bytecode, value, salt, message);
     }
 
     /**

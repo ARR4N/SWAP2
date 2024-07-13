@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
-import {ETDeployer, ET, Message} from "../src/ET.sol";
+import {ETDeployer, ETPredictor, ET, Message} from "../src/ET.sol";
 
 event MessageReceived(Message indexed);
 
@@ -28,7 +28,7 @@ contract TestableETDeployer is ETDeployer {
     }
 
     function predict(bytes32 salt) external view returns (address) {
-        return _predictDeploymentAddress(type(TestableET).creationCode, salt);
+        return ETPredictor.deploymentAddress(type(TestableET).creationCode, salt);
     }
 }
 
