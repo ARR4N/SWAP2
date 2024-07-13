@@ -14,9 +14,9 @@ import {SwapperProposerBase} from "../SwapperProposerBase.sol";
 import {OnlyPartyCanCancel, ActionMessageLib, CANCEL_MSG, ISwapperEvents} from "../TypesAndConstants.sol";
 
 /// @dev Predictor of TMPLSwapper contract addresses.
-contract TMPLSwapperPredictor is ETPredictor {
+contract TMPLSwapperPredictor {
     function _swapper(TMPLSwap calldata swap, bytes32 salt, address deployer) internal pure returns (address) {
-        return _predictDeploymentAddress(_bytecode(swap), salt, deployer);
+        return ETPredictor.deploymentAddress(_bytecode(swap), salt, deployer);
     }
 
     function _bytecode(TMPLSwap calldata swap) internal pure returns (bytes memory) {

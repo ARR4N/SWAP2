@@ -6,6 +6,7 @@ import {console2} from "forge-std/console2.sol";
 import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 
 import {Disbursement} from "../src/ConsiderationLib.sol";
+import {Create2} from "../src/Create2.sol";
 import {OnlyPartyCanCancel, ExcessPlatformFee, Parties, SwapStatus, swapStatus} from "../src/TypesAndConstants.sol";
 import {Escrow} from "../src/Escrow.sol";
 import {ETDeployer} from "../src/ET.sol";
@@ -33,6 +34,37 @@ contract FundsRejector {
     }
 }
 
+/// @dev Contract that propagates arbitrary calls, used for tests of reentrancy.
+contract FallbackCaller {
+    address private _callOnFallback;
+    bytes private _data;
+
+    function setFallbackCall(address callOnFallback, bytes memory data) public {
+        _callOnFallback = callOnFallback;
+        _data = data;
+    }
+
+    receive() external payable {
+        _call(_callOnFallback, _data);
+    }
+
+    fallback() external {
+        _call(_callOnFallback, _data);
+    }
+
+    struct Outcome {
+        bool success;
+        bytes returnData;
+    }
+
+    Outcome[] public calls;
+
+    function _call(address a, bytes memory data) private {
+        (bool success, bytes memory ret) = a.call(data);
+        calls.push(Outcome({success: success, returnData: ret}));
+    }
+}
+
 /**
  * @notice Implements concrete tests of swapping a single ERC721, agnostic to type of payment.
  * @dev Inherit from both this contract and either NativeTokenTest or ERC20Test for a complete, non-abstract test
@@ -56,8 +88,14 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
     function _fillSelector() internal pure virtual returns (bytes4);
 
+    function _cancelSelector() internal pure virtual returns (bytes4);
+
     function _callDataToFill(ERC721TestCase memory t) internal view returns (bytes memory) {
         return abi.encodePacked(_fillSelector(), _encodedSwapAndSalt(t, t.base.salt));
+    }
+
+    function _callDataToCancel(ERC721TestCase memory t) internal view returns (bytes memory) {
+        return abi.encodePacked(_cancelSelector(), _encodedSwapAndSalt(t, t.base.salt));
     }
 
     /// @dev Fills the swap defined by the test case.
@@ -194,7 +232,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         token.transferFrom(test.buyer(), test.seller(), t.tokenId);
         vm.stopPrank();
 
-        vm.expectRevert(ETDeployer.Create2EmptyRevert.selector);
+        vm.expectRevert(Create2.Create2EmptyRevert.selector);
         _replay(t, replayer);
         assertEq(token.ownerOf(t.tokenId), test.seller());
 
@@ -267,7 +305,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         }
 
         {
-            vm.expectRevert(abi.encodeWithSelector(ETDeployer.Create2EmptyRevert.selector));
+            vm.expectRevert(abi.encodeWithSelector(Create2.Create2EmptyRevert.selector));
             _replay(t, vandal);
             _afterExecute(test, swapper, true);
             assertEq(swapStatus(swapper), SwapStatus.Cancelled, "status after replay attempt");
@@ -290,7 +328,44 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
         // The most precise way to detect a redeployment is to see that CREATE2 reverts without any return data.
         // Inspection of the trace with `forge test -vvvv` is necessary to see the [CreationCollision] error.
-        _testFill(t, abi.encodeWithSelector(ETDeployer.Create2EmptyRevert.selector));
+        _testFill(t, abi.encodeWithSelector(Create2.Create2EmptyRevert.selector));
+    }
+
+    function testNonReentrantBuyerCancelBetweenReceiptAndPayment(ERC721TestCase memory t)
+        external
+        assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true}))
+    {
+        vm.skip(_isERC20Test());
+        vm.assume(t.base._numThirdParty > 0);
+        vm.assume(t.base._thirdParty[0].amount > 0);
+
+        // If a buyer and a third party were to collude on a native-token sale, the buyer could call cancel() before the
+        // seller receives their funds.
+
+        FallbackCaller buyer = new FallbackCaller();
+        FallbackCaller colluder = new FallbackCaller();
+        colluder.setFallbackCall(address(buyer), "");
+
+        t.base.parties.buyer = address(buyer);
+        t.base._thirdParty[0].to = address(colluder);
+        buyer.setFallbackCall(address(factory), _callDataToCancel(t));
+
+        // Steps will now be:
+        // 1. Token(s) transferred to buyer
+        // 2. Colluder receives funds
+        // 3. Colluder calls buyer
+        // 4. Buyer attempts to cancel
+        // 5. Cancellation fails; note that FallbackCaller catches and records the revert so the fill() succeeds
+        _testFill(t, "");
+
+        // Prove that the scenario actually played out as expected.
+        (bool success, bytes memory returnData) = buyer.calls(0);
+        assertFalse(success, "buyer's attempt to cancel");
+        assertEq(
+            returnData,
+            abi.encodeWithSelector(Create2.Create2EmptyRevert.selector), // see rationale in `testNonReentrant()`
+            "reason for buyer's failed cancellation"
+        );
     }
 
     function testGriefNativeTokenInvariant(ERC721TestCase memory t, uint8 vandalIndex)
@@ -347,7 +422,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
             vm.deal(t.base.caller, values[i]);
 
             if (values[i] > 0) {
-                vm.expectRevert(ETDeployer.Create2EmptyRevert.selector); // constructor reverts
+                vm.expectRevert(Create2.Create2EmptyRevert.selector); // constructor reverts
             }
             vm.prank(t.base.caller);
             (bool revertsAsExpected,) = address(factory).call{value: values[i]}(_callDataToFill(t));
