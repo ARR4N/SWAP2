@@ -70,7 +70,7 @@ abstract contract SwapperTestBase is Test, ITestEvents {
     address immutable owner = makeAddr("owner");
 
     function setUp() public virtual {
-        factory = new SWAP2(owner, new Escrow());
+        factory = new SWAP2(owner, new Escrow(), payable(0), 0);
         vm.label(address(factory), "SWAP2");
         token = new Token();
         vm.label(address(token), "FakeERC721");

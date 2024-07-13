@@ -38,8 +38,11 @@ contract SWAP2Deployer is
      * @param initialOwner Initial owner of the contract. SHOULD be a multisig as this address can modify platform-fee
      * configuration.
      */
-    constructor(address initialOwner, Escrow escrow_) Ownable(initialOwner) {
+    constructor(address initialOwner, Escrow escrow_, address payable feeRecipient, uint16 feeBasisPoints)
+        Ownable(initialOwner)
+    {
         escrow = escrow_;
+        _setPlatformFee(feeRecipient, feeBasisPoints);
     }
 
     /// @dev Packs platform-fee configuration into a single word.
@@ -60,6 +63,10 @@ contract SWAP2Deployer is
      * @param basisPoints One-hundredths of a percentage point of swap consideration to charge as a platform fee.
      */
     function setPlatformFee(address payable recipient, uint16 basisPoints) external onlyOwner {
+        _setPlatformFee(recipient, basisPoints);
+    }
+
+    function _setPlatformFee(address payable recipient, uint16 basisPoints) private {
         feeConfig = PlatformFeeConfig({recipient: recipient, basisPoints: basisPoints});
     }
 
@@ -103,7 +110,9 @@ contract SWAP2Proposer is SWAP2ProposerBase {
 
 /// @notice A combined SWAP2{Deployer,Proposer}.
 contract SWAP2 is SWAP2Deployer, SWAP2ProposerBase {
-    constructor(address initialOwner, Escrow escrow) SWAP2Deployer(initialOwner, escrow) {}
+    constructor(address initialOwner, Escrow escrow, address payable feeRecipient, uint16 feeBasisPoints)
+        SWAP2Deployer(initialOwner, escrow, feeRecipient, feeBasisPoints)
+    {}
 
     /// @dev The current contract is the swapper deployer for all types.
     function _swapperDeployer() internal view override returns (address) {
