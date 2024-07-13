@@ -51,6 +51,11 @@ contract ERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
     }
 
     /// @inheritdoc ERC721ForXTest
+    function _cancelSelector() internal pure override returns (bytes4) {
+        return ERC721ForNativeSwapperDeployer.cancel.selector;
+    }
+
+    /// @inheritdoc ERC721ForXTest
     function _fill(ERC721TestCase memory t) internal override {
         _fill(t, t.base.native.callValue);
     }
