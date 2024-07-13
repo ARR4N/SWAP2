@@ -358,11 +358,12 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         // 5. Cancellation fails; note that FallbackCaller catches and records the revert so the fill() succeeds
         _testFill(t, "");
 
+        // Prove that the scenario actually played out as expected.
         (bool success, bytes memory returnData) = buyer.calls(0);
         assertFalse(success, "buyer's attempt to cancel");
         assertEq(
             returnData,
-            abi.encodeWithSelector(Create2.Create2EmptyRevert.selector),
+            abi.encodeWithSelector(Create2.Create2EmptyRevert.selector), // see rationale in `testNonReentrant()`
             "reason for buyer's failed cancellation"
         );
     }
