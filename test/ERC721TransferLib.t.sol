@@ -11,25 +11,56 @@ import {Parties} from "../src/TypesAndConstants.sol";
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 contract ERC721TransferLibTest is Test, ITestEvents {
+    using ERC721TransferLib for *;
+
     address public tokenTemplate = address(new Token());
 
     uint256 constant NUM_CONTRACTS = 5;
     uint256 constant TOKENS_PER_CONTRACT = 5;
 
-    function testMultiERC721TokenTransfer(
+    function testERC721TokenTransfers(
         bytes32[NUM_CONTRACTS] calldata deploySalts,
         uint256[NUM_CONTRACTS][TOKENS_PER_CONTRACT] calldata ids,
         Parties memory parties
     ) public {
         ERC721TransferLib.MultiERC721Token[] memory tokens = _testSetup(deploySalts, ids, parties);
 
-        _assertOwner(tokens, parties.seller);
+        function(ERC721TransferLib.MultiERC721Token[] memory, Parties memory)[3] memory funcs =
+            [_transferBatch, _transferPerContract, _transferIndividually];
 
-        vm.startPrank(parties.seller);
-        ERC721TransferLib._transfer(tokens, parties);
-        vm.stopPrank();
+        for (uint256 i = 0; i < funcs.length; ++i) {
+            uint256 snap = vm.snapshot();
+            _assertOwner(tokens, parties.seller);
 
-        _assertOwner(tokens, parties.buyer);
+            vm.startPrank(parties.seller);
+            funcs[i](tokens, parties);
+            vm.stopPrank();
+
+            _assertOwner(tokens, parties.buyer);
+            vm.revertTo(snap);
+        }
+    }
+
+    function _transferBatch(ERC721TransferLib.MultiERC721Token[] memory tokens, Parties memory parties) internal {
+        tokens._transfer(parties);
+    }
+
+    function _transferPerContract(ERC721TransferLib.MultiERC721Token[] memory tokens, Parties memory parties)
+        internal
+    {
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            tokens[i]._transfer(parties);
+        }
+    }
+
+    function _transferIndividually(ERC721TransferLib.MultiERC721Token[] memory tokens, Parties memory parties)
+        internal
+    {
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            for (uint256 j = 0; j < tokens[i].ids.length; ++j) {
+                ERC721TransferLib.ERC721Token({addr: tokens[i].addr, id: tokens[i].ids[j]})._transfer(parties);
+            }
+        }
     }
 
     function testGas(
@@ -62,13 +93,13 @@ contract ERC721TransferLibTest is Test, ITestEvents {
 
         {
             libGas = gasleft();
-            ERC721TransferLib._transfer(tokens, parties);
+            tokens._transfer(parties);
             libGas -= gasleft();
         }
 
-        // 140 gas per token was found empirically; it has no special meaning other than to demonstrate the gas saving
+        // 137 gas per token was found empirically; it has no special meaning other than to demonstrate the gas saving
         // in this particular instance and may be a change-detector test.
-        assertLt(libGas + 140 * NUM_CONTRACTS * TOKENS_PER_CONTRACT, naiveGas);
+        assertLe(libGas + 137 * NUM_CONTRACTS * TOKENS_PER_CONTRACT, naiveGas);
         console2.log(naiveGas - libGas);
     }
 
@@ -120,7 +151,7 @@ contract ERC721TransferLibTest is Test, ITestEvents {
     function testMultiERC721TokenTransferNothing(address tokenContract, Parties memory parties) public {
         ERC721TransferLib.MultiERC721Token[] memory tokens = new ERC721TransferLib.MultiERC721Token[](1);
         tokens[0].addr = IERC721(tokenContract);
-        ERC721TransferLib._transfer(tokens, parties);
+        tokens._transfer(parties);
     }
 
     function testErrorPropagation(uint256 tokenId, Parties memory parties) public {
@@ -137,6 +168,6 @@ contract ERC721TransferLibTest is Test, ITestEvents {
                 ? abi.encodeWithSelector(IERC721Errors.ERC721InvalidReceiver.selector, address(0))
                 : abi.encodeWithSelector(IERC721Errors.ERC721NonexistentToken.selector, tokenId)
         );
-        ERC721TransferLib._transfer(tokens, parties);
+        tokens._transfer(parties);
     }
 }
