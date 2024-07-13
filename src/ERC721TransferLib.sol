@@ -30,35 +30,59 @@ library ERC721TransferLib {
     }
 
     /**
-     * @dev Transfers all tokens from `parties.seller` to `parties.buyer`. The order of transfer is NOT guaranteed.
+     * @dev Transfers all tokens from `parties.seller` to `parties.buyer`.
+     * @param tokens Any number of ERC721 tokens from a single contract; ids MUST be distinct across the entire array.
+     */
+    function _transfer(MultiERC721Token memory tokens, Parties memory parties) internal {
+        _transfer(tokens, _reusableTransferCallData(parties));
+    }
+
+    /**
+     * @dev Transfers all tokens from `parties.seller` to `parties.buyer`.
      * @param tokens An _array_ of MultiERC721Token structs, representing any number of tokens. {addr,id} pairs MUST be
      * distinct across the entire array.
      */
     function _transfer(MultiERC721Token[] memory tokens, Parties memory parties) internal {
-        // Reusable memory buffer for call(), so we only have to copy the tokenId and swap the address being called.
-        bytes memory callData = abi.encodeCall(IERC721.transferFrom, (parties.seller, parties.buyer, 0));
+        bytes memory callData = _reusableTransferCallData(parties);
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            _transfer(tokens[i], callData);
+        }
+    }
 
-        uint256 tokenIdPtr;
+    /**
+     * @dev Returns calldata for `ERC721.transferFrom(parties.seller, parties.buyer, 0)`, which can be reused to avoid
+     * unnecessary memory expansion when transferring large numbers of tokens.
+     */
+    function _reusableTransferCallData(Parties memory parties) private pure returns (bytes memory) {
+        return abi.encodeCall(IERC721.transferFrom, (parties.seller, parties.buyer, 0));
+    }
+
+    /**
+     * @param token Contract and IDs of tokens to be transferred.
+     * @param reusableCallData Output of `_reusableTransferCallData()`.
+     */
+    function _transfer(MultiERC721Token memory token, bytes memory reusableCallData) private {
+        address addr = address(token.addr);
+        uint256[] memory ids = token.ids;
+
+        uint256 idSrc;
+        uint256 idDst;
         assembly ("memory-safe") {
-            tokenIdPtr := add(callData, 0x64)
+            idSrc := add(ids, 0x20)
+            idDst := add(reusableCallData, 0x64)
         }
 
-        for (uint256 i = 0; i < tokens.length; ++i) {
-            address addr = address(tokens[i].addr);
-            uint256[] memory ids = tokens[i].ids;
+        for (uint256 end = idSrc + ids.length * 0x20; idSrc < end; idSrc += 0x20) {
+            assembly ("memory-safe") {
+                mcopy(idDst, idSrc, 0x20)
+            }
+            (bool success,) = addr.call(reusableCallData);
 
-            for (uint256 offset = tokens[i].ids.length * 0x20; offset > 0; offset -= 0x20) {
+            if (!success) {
                 assembly ("memory-safe") {
-                    mcopy(tokenIdPtr, add(ids, offset), 0x20)
-                }
-                (bool success,) = addr.call(callData);
-
-                if (!success) {
-                    assembly ("memory-safe") {
-                        let free := mload(0x40)
-                        returndatacopy(free, 0, returndatasize())
-                        revert(free, returndatasize())
-                    }
+                    let free := mload(0x40)
+                    returndatacopy(free, 0, returndatasize())
+                    revert(free, returndatasize())
                 }
             }
         }
