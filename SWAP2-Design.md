@@ -66,8 +66,8 @@ Although this is still highly unlikely, [NIST recommends against 80 bits of secu
 We can achieve this by securely choosing the CREATE2 salt _after_ agreeing to trade details, returning to 160 bits due to second-preimage resistance.
 
 > [!CAUTION]
-> To provide 160-bit security, CREATE2 salts SHOULD be deteremined after agreeing to specifics of a trade.
-> Without this, security guarantees might be halved to 80 bits.
+> To provide 160-bit security, CREATE2 salts MUST be deteremined after agreeing to specifics of a trade.
+> Without this, the security guarantee is halved to 80 bits.
 
 ## Terminology
 
