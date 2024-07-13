@@ -6,6 +6,7 @@ import {console2} from "forge-std/console2.sol";
 import {SwapperTestBase, SwapperTestLib} from "./SwapperTestBase.t.sol";
 
 import {Disbursement} from "../src/ConsiderationLib.sol";
+import {Create2} from "../src/Create2.sol";
 import {OnlyPartyCanCancel, ExcessPlatformFee, Parties, SwapStatus, swapStatus} from "../src/TypesAndConstants.sol";
 import {Escrow} from "../src/Escrow.sol";
 import {ETDeployer} from "../src/ET.sol";
@@ -194,7 +195,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         token.transferFrom(test.buyer(), test.seller(), t.tokenId);
         vm.stopPrank();
 
-        vm.expectRevert(ETDeployer.Create2EmptyRevert.selector);
+        vm.expectRevert(Create2.Create2EmptyRevert.selector);
         _replay(t, replayer);
         assertEq(token.ownerOf(t.tokenId), test.seller());
 
@@ -267,7 +268,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         }
 
         {
-            vm.expectRevert(abi.encodeWithSelector(ETDeployer.Create2EmptyRevert.selector));
+            vm.expectRevert(abi.encodeWithSelector(Create2.Create2EmptyRevert.selector));
             _replay(t, vandal);
             _afterExecute(test, swapper, true);
             assertEq(swapStatus(swapper), SwapStatus.Cancelled, "status after replay attempt");
@@ -290,7 +291,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
         // The most precise way to detect a redeployment is to see that CREATE2 reverts without any return data.
         // Inspection of the trace with `forge test -vvvv` is necessary to see the [CreationCollision] error.
-        _testFill(t, abi.encodeWithSelector(ETDeployer.Create2EmptyRevert.selector));
+        _testFill(t, abi.encodeWithSelector(Create2.Create2EmptyRevert.selector));
     }
 
     function testGriefNativeTokenInvariant(ERC721TestCase memory t, uint8 vandalIndex)
@@ -347,7 +348,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
             vm.deal(t.base.caller, values[i]);
 
             if (values[i] > 0) {
-                vm.expectRevert(ETDeployer.Create2EmptyRevert.selector); // constructor reverts
+                vm.expectRevert(Create2.Create2EmptyRevert.selector); // constructor reverts
             }
             vm.prank(t.base.caller);
             (bool revertsAsExpected,) = address(factory).call{value: values[i]}(_callDataToFill(t));

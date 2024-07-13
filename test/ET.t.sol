@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
+import {Create2} from "../src/Create2.sol";
 import {ETDeployer, ETPredictor, ET, Message} from "../src/ET.sol";
 
 event MessageReceived(Message indexed);
@@ -74,7 +75,7 @@ contract ETTest is Test {
     }
 
     function _recreate(bytes32 salt, Message message) internal {
-        vm.expectRevert(ETDeployer.Create2EmptyRevert.selector);
+        vm.expectRevert(Create2.Create2EmptyRevert.selector);
         deployer.deploy{gas: 50_000}(salt, message);
     }
 

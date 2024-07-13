@@ -2,7 +2,8 @@
 // Copyright 2024 Divergence Tech Ltd.
 pragma solidity ^0.8.24; // Requires TLOAD/TSTORE
 
-import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
+import {Create2} from "./Create2.sol";
+import {Create2 as OZCreate2} from "@openzeppelin/contracts/utils/Create2.sol";
 
 /**
  * @dev An arbitrary word that a deploying contract can pass to a CREATE2-deployed contract that "phones home". By
@@ -49,7 +50,7 @@ library ETPredictor {
      * `ETDeployer._deploy()`, with the exception of an additional `deployer` address.
      */
     function deploymentAddress(bytes memory bytecode, bytes32 salt, address deployer) internal pure returns (address) {
-        return Create2.computeAddress(salt, keccak256(bytecode), deployer);
+        return OZCreate2.computeAddress(salt, keccak256(bytecode), deployer);
     }
 }
 
@@ -59,8 +60,6 @@ library ETPredictor {
  */
 contract ETDeployer is IETHome {
     error PredictedAddressMismatch(address deployed, address predicted);
-    /// @dev Thrown when create2() fails with returndatasize()==0, for precise error-path testing with expectRevert().
-    error Create2EmptyRevert();
 
     /**
      * @dev Deploys an ET contract, first transiently storing the Message to make it available via etMessage().
@@ -77,34 +76,20 @@ contract ETDeployer is IETHome {
         internal
         returns (address)
     {
-        address deployed;
         assembly ("memory-safe") {
             // There is no need to explicitly clear this TSTORE (as solc recommends) because it is uniquely tied to the
             // deployed contract, which can never be reused.
             tstore(shr(96, shl(96, predicted)), message)
-            deployed := create2(value, add(bytecode, 0x20), mload(bytecode), salt)
         }
 
-        if (deployed == address(0)) {
-            assembly ("memory-safe") {
-                let free := mload(0x40)
-
-                if iszero(returndatasize()) {
-                    mstore(free, 0x33d2bae4) // Create2EmptyRevert()
-                    revert(add(free, 28), 4)
-                }
-
-                returndatacopy(free, 0, returndatasize())
-                revert(free, returndatasize())
-            }
-        }
+        address deployed = Create2.deploy(bytecode, value, salt);
         if (deployed != predicted) {
             revert PredictedAddressMismatch(deployed, predicted);
         }
-
         return deployed;
     }
 
+    /// @dev Identical to `_deploy(address predicted, ...)` except that the predicted address is computed.
     function _deploy(bytes memory bytecode, uint256 value, bytes32 salt, Message message) internal returns (address) {
         return _deploy(ETPredictor.deploymentAddress(bytecode, salt), bytecode, value, salt, message);
     }
