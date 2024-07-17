@@ -6,7 +6,7 @@ import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 
 // This is less of a test and more of an experiment to see how Solidity handles return bombing with a low-level call().
-// Result: only an assembly-based call(..., 0, 0) avoids the return bomb entirely and a non-assembly address.call() will
+// Result: only an assembly-based call(..., 0) avoids the return bomb entirely and a non-assembly address.call() will
 // still copy even when only the success boolean is declared.
 
 contract WithReturnData {
@@ -27,7 +27,7 @@ contract WithtoutReturnData {
 contract AssemblyCall {
     function x(address a) external {
         assembly ("memory-safe") {
-            let success := call(0, a, 0, 0, 0, 0, 0)
+            let success := call(gas(), a, 0, 0, 0, 0, 0)
         }
     }
 }
@@ -46,7 +46,7 @@ contract ReturnBombTest is Test {
     function _hasReturnDataCopy(address a) internal view returns (bool) {
         bytes memory code = a.code;
         for (uint256 i = 0; i < code.length; ++i) {
-            if (code[i] == 0x3e) {
+            if (code[i] == 0x3e /* https://www.evm.codes/#3e */ ) {
                 return true;
             }
         }
