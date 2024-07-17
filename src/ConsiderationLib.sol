@@ -97,8 +97,15 @@ library ConsiderationLib {
     }
 
     function _sendOrEscrow(address payable to, uint256 amount, IEscrow escrow) internal {
-        // 20k for a fresh SSTORE and an arbitrary 10k overhead
-        (bool success,) = to.call{value: amount, gas: 30_000}("");
+        bool success;
+        assembly ("memory-safe") {
+            // Note: it's not sufficient to use a non-assembly `(bool success,) = to.call{gas: 30_000}("")` to avoid a
+            // return bomb because Solidity will still (as at 0.8.25) copy the return data.
+            //
+            // Allow for the buyer to be a contract that does some minimal bookkeeping:
+            // 20k for a fresh SSTORE and an arbitrary 10k overhead
+            success := call(30000, to, amount, 0, 0, 0, 0)
+        }
         if (success) {
             return;
         }
