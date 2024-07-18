@@ -293,9 +293,17 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         {
             uint256 expectedBuyerBalance = _balance(test.buyer()) + _balance(swapper);
 
+            if (!_isERC20Test() && _balance(swapper) > 0) {
+                vm.expectEmit(true, true, true, true, address(factory.escrow()));
+                emit Deposit(test.buyer(), _balance(swapper));
+            }
             vm.expectEmit(true, true, true, true, address(factory));
             emit Cancelled(_swapper(t));
             _cancelAs(t, asSeller ? test.seller() : test.buyer());
+
+            if (factory.escrow().balance(test.buyer()) > 0) {
+                factory.escrow().withdraw(test.buyer());
+            }
 
             assertEq(_balance(swapper), 0, "swapper balance zero after cancel");
             assertEq(_balance(test.buyer()), expectedBuyerBalance, "buyer balance after cancel");
