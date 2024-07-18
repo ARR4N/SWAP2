@@ -368,7 +368,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         );
     }
 
-    function testGriefNativeTokenInvariant(ERC721TestCase memory t, uint8 vandalIndex)
+    function testGriefNativeTokenInvariantOnFill(ERC721TestCase memory t, uint8 vandalIndex)
         external
         assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true}))
     {
@@ -395,6 +395,22 @@ abstract contract ERC721ForXTest is SwapperTestBase {
             _expectedSellerBalanceAfterFill(t.base) + vandal.amount,
             "seller receives excess amount sent to contract"
         );
+    }
+
+    function testGriefNativeTokenInvariantOnCancel(ERC721TestCase memory t)
+        external
+        assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true}))
+    {
+        vm.skip(_isERC20Test());
+
+        // If the buyer sends any funds back during cancellation, the post-execution invariant of zero balance will be
+        // broken.
+        t.base.parties.buyer = address(new FundsReflector());
+        address swapper = _beforeExecute(t);
+
+        vm.expectEmit(true, true, true, true, address(factory));
+        emit Cancelled(swapper);
+        _cancelAs(t, t.base.seller());
     }
 
     /**
