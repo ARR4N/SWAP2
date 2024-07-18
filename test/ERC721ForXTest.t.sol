@@ -483,6 +483,29 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         escrow.withdraw(test.buyer());
     }
 
+    function testChainIdCoupling(ERC721TestCase memory t, uint64 chainId0, uint64 chainId1)
+        external
+        // While the specific assumptions are irrelevant, general assumptions about `t` must be made for it to be valid
+        // otherwise we'll get out-of-bounds errors.
+        assumeValidTest(t.base, Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true}))
+    {
+        vm.chainId(chainId0);
+        address swapperOnChain0 = _swapper(t);
+
+        vm.chainId(chainId1);
+        address swapperOnChain1 = _swapper(t);
+
+        emit log_named_uint("chain ID 0", chainId0);
+        emit log_named_uint("chain ID 1", chainId1);
+        emit log_named_address("swapper on chain 0", swapperOnChain0);
+        emit log_named_address("swapper on chain 1", swapperOnChain1);
+        assertEq(
+            chainId0 == chainId1,
+            swapperOnChain0 == swapperOnChain1,
+            "different chain IDs <=> different swapper addresses"
+        );
+    }
+
     function testGas() external {
         Disbursement[5] memory thirdParty;
         uint128 total = 1 ether;
