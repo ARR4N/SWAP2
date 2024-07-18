@@ -31,6 +31,11 @@ contract SWAP2Deployer is
     MultiERC721ForNativeSwapperDeployer,
     MultiERC721ForERC20SwapperDeployer
 {
+    /// @dev Thrown if platform-fee recipient is the zero address.
+    error ZeroAddressFeeRecipient();
+    /// @dev Thrown if platform-fee basis points > 10_000.
+    error InvalidBasisPoints(uint16);
+
     /// @notice Escrow contract used in case of failed push payments.
     Escrow public immutable escrow;
 
@@ -67,6 +72,13 @@ contract SWAP2Deployer is
     }
 
     function _setPlatformFee(address payable recipient, uint16 basisPoints) private {
+        if (recipient == address(0)) {
+            revert ZeroAddressFeeRecipient();
+        }
+        if (basisPoints > 10_000) {
+            revert InvalidBasisPoints(basisPoints);
+        }
+
         feeConfig = PlatformFeeConfig({recipient: recipient, basisPoints: basisPoints});
     }
 

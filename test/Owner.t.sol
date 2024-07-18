@@ -15,7 +15,7 @@ contract OwnerTest is Test {
         vm.assume(initial != address(0));
         vm.assume(newOwner != address(0));
 
-        SWAP2 s = new SWAP2(initial, new Escrow(), payable(0), 0);
+        SWAP2 s = new SWAP2(initial, new Escrow(), payable(address(1)), 0);
 
         vm.prank(initial);
         s.transferOwnership(newOwner);
@@ -34,7 +34,7 @@ contract OwnerTest is Test {
         vm.assume(owner != address(0));
         vm.assume(owner != vandal);
 
-        SWAP2 s = new SWAP2(owner, new Escrow(), payable(0), 0);
+        SWAP2 s = new SWAP2(owner, new Escrow(), payable(address(1)), 0);
 
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, vandal));
         vm.prank(vandal);
