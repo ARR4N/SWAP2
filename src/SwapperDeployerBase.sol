@@ -3,6 +3,7 @@
 pragma solidity 0.8.25;
 
 import {IEscrow} from "./Escrow.sol";
+import {currentChainId} from "./TypesAndConstants.sol";
 
 /// @dev Abstract base contract for all <T>SwapperDeployer implementations.
 abstract contract SwapperDeployerBase {
@@ -17,4 +18,9 @@ abstract contract SwapperDeployerBase {
      * buyer.
      */
     function _escrow() internal view virtual returns (IEscrow);
+
+    /// @return The current chain ID.
+    function _currentChainId() internal view returns (uint256) {
+        return currentChainId();
+    }
 }

@@ -92,19 +92,26 @@ abstract contract SWAP2ProposerBase is
     MultiERC721ForERC20SwapperProposer
 {}
 
-/// @notice A standalone SWAP2 proposer for an immutable deployer address.
+/// @notice A standalone SWAP2 proposer for an immutable deployer address and chain ID.
 contract SWAP2Proposer is SWAP2ProposerBase {
     /// @notice The SWAP2Deployer for which this contract proposes swaps.
     address public immutable deployer;
 
-    /// @param deployer_ Address of the SWAP2Deployer for which this contract proposes swaps.
-    constructor(address deployer_) {
+    /// @notice The chain on which proposed swaps will be executed.
+    uint256 public immutable chainId;
+
+    /**
+     * @param deployer_ Address of the SWAP2Deployer for which this contract proposes swaps.
+     * @param chainId_ Chain on which proposed swaps will be executed.
+     */
+    constructor(address deployer_, uint256 chainId_) {
         deployer = deployer_;
+        chainId = chainId_;
     }
 
     /// @dev The immutable `deployer` is the swapper deployer for all types.
-    function _swapperDeployer() internal view override returns (address) {
-        return deployer;
+    function _swapperDeployer() internal view override returns (address, uint256) {
+        return (deployer, chainId);
     }
 }
 
@@ -115,7 +122,7 @@ contract SWAP2 is SWAP2Deployer, SWAP2ProposerBase {
     {}
 
     /// @dev The current contract is the swapper deployer for all types.
-    function _swapperDeployer() internal view override returns (address) {
-        return address(this);
+    function _swapperDeployer() internal view override returns (address, uint256) {
+        return (address(this), _currentChainId());
     }
 }
