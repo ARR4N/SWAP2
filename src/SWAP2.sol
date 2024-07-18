@@ -118,8 +118,8 @@ contract SWAP2Proposer is SWAP2ProposerBase {
 
 /// @notice A combined SWAP2{Deployer,Proposer}.
 contract SWAP2 is SWAP2Deployer, SWAP2ProposerBase {
-    constructor(address initialOwner, Escrow escrow, address payable feeRecipient, uint16 feeBasisPoints)
-        SWAP2Deployer(initialOwner, escrow, feeRecipient, feeBasisPoints)
+    constructor(address initialOwner, Escrow escrow_, address payable feeRecipient, uint16 feeBasisPoints)
+        SWAP2Deployer(initialOwner, escrow_, feeRecipient, feeBasisPoints)
     {}
 
     /// @dev The current contract is the swapper deployer for all types.
