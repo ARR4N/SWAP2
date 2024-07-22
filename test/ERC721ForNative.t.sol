@@ -32,12 +32,12 @@ contract ERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
 
     /// @inheritdoc ERC721ForXTest
     function _swapper(ERC721TestCase memory t) internal view override returns (address) {
-        return factory.swapper(_asSwap(t), t.base.salt);
+        return factory.swapperOfERC721ForNative(_asSwap(t), t.base.salt);
     }
 
     /// @inheritdoc ERC721ForXTest
     function _propose(ERC721TestCase memory t) internal override returns (bytes32 salt, address swapper) {
-        return factory.propose(_asSwap(t));
+        return factory.proposeERC721ForNative(_asSwap(t));
     }
 
     /// @inheritdoc ERC721ForXTest
@@ -47,12 +47,12 @@ contract ERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
 
     /// @inheritdoc ERC721ForXTest
     function _fillSelector() internal pure override returns (bytes4) {
-        return ERC721ForNativeSwapperDeployer.fill.selector;
+        return ERC721ForNativeSwapperDeployer.fillERC721ForNative.selector;
     }
 
     /// @inheritdoc ERC721ForXTest
     function _cancelSelector() internal pure override returns (bytes4) {
-        return ERC721ForNativeSwapperDeployer.cancel.selector;
+        return ERC721ForNativeSwapperDeployer.cancelERC721ForNative.selector;
     }
 
     /// @inheritdoc ERC721ForXTest
@@ -61,12 +61,12 @@ contract ERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
     }
 
     function _fill(ERC721TestCase memory t, uint256 callValue) internal {
-        factory.fill{value: callValue}(_asSwap(t), t.base.salt);
+        factory.fillERC721ForNative{value: callValue}(_asSwap(t), t.base.salt);
     }
 
     /// @inheritdoc ERC721ForXTest
     function _cancel(ERC721TestCase memory t) internal override {
-        factory.cancel(_asSwap(t), t.base.salt);
+        factory.cancelERC721ForNative(_asSwap(t), t.base.salt);
     }
 
     /// @inheritdoc ERC721ForXTest
