@@ -65,24 +65,19 @@ library ERC721TransferLib {
         address addr = address(token.addr);
         uint256[] memory ids = token.ids;
 
-        uint256 idSrc;
-        uint256 idDst;
         assembly ("memory-safe") {
-            idSrc := add(ids, 0x20)
-            idDst := add(reusableCallData, 0x64)
-        }
+            let idSrc := add(ids, 0x20)
+            let idDst := add(reusableCallData, 0x64)
+            let dataPtr := add(reusableCallData, 0x20)
 
-        for (uint256 end = idSrc + ids.length * 0x20; idSrc < end; idSrc += 0x20) {
-            assembly ("memory-safe") {
+            for { let end := add(idSrc, mul(mload(ids), 0x20)) } lt(idSrc, end) { idSrc := add(idSrc, 0x20) } {
                 mcopy(idDst, idSrc, 0x20)
-            }
-            (bool success,) = addr.call(reusableCallData);
 
-            if (!success) {
-                assembly ("memory-safe") {
-                    let free := mload(0x40)
-                    returndatacopy(free, 0, returndatasize())
-                    revert(free, returndatasize())
+                if iszero(call(gas(), addr, 0, dataPtr, reusableCallData, 0, 0)) {
+                    // Even though this may extend beyond scratch space, we revert the current context immediately so
+                    // it's still memory-safe.
+                    returndatacopy(0, 0, returndatasize())
+                    revert(0, returndatasize())
                 }
             }
         }
