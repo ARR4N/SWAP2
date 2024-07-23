@@ -552,7 +552,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
                     platformFeeRecipient: payable(fees),
                     _approval: uint8(Approval.Approve),
                     warpToTimestamp: block.timestamp,
-                    notValidAfter: 0,
+                    notValidAfter: block.timestamp,
                     caller: makeAddr("buyer"),
                     salt: keccak256("pepper"),
                     native: NativePayments({prePay: 0, callValue: total, postPay: 0}),

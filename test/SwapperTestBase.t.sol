@@ -241,8 +241,8 @@ abstract contract SwapperTestBase is Test, ITestEvents {
                     t.warpToTimestamp = bound(t.warpToTimestamp, 0, t.notValidAfter);
                 } else {
                     // !expired
-                    vm.assume(t.warpToTimestamp >= 2);
-                    t.notValidAfter = bound(t.notValidAfter, 1, t.warpToTimestamp - 1);
+                    vm.assume(t.warpToTimestamp >= 1);
+                    t.notValidAfter = bound(t.notValidAfter, 0, t.warpToTimestamp - 1);
                 }
             }
             // Although this should always be true, the switching logic is too complex for a test so we must confirm
@@ -261,9 +261,7 @@ abstract contract SwapperTestBase is Test, ITestEvents {
     }
 
     function _expired(TestCase memory t) internal pure returns (bool) {
-        // This is deliberately verbose to reduce cognitive load when confirming < vs >.
-        bool afterValidity = t.warpToTimestamp > t.notValidAfter;
-        return t.notValidAfter != 0 && afterValidity;
+        return t.warpToTimestamp > t.notValidAfter;
     }
 
     uint256[] private _seenAddresses;
