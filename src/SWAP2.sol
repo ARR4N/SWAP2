@@ -68,6 +68,7 @@ contract SWAP2Deployer is
 
     function _setPlatformFee(address payable recipient, uint16 basisPoints) private {
         feeConfig = PlatformFeeConfig({recipient: recipient, basisPoints: basisPoints});
+        emit PlatformFeeChanged(recipient, basisPoints);
     }
 
     /**
