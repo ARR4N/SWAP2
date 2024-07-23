@@ -9,4 +9,5 @@ struct MultiERC721ForERC20Swap {
     Parties parties;
     ERC721TransferLib.MultiERC721Token[] offer;
     ERC20Consideration consideration;
+    uint256 notValidAfter;
 }

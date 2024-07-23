@@ -19,7 +19,8 @@ import {
     CANCEL,
     FILLED_ARTIFACT,
     CANCELLED_ARTIFACT,
-    ExcessPlatformFee
+    ExcessPlatformFee,
+    SwapExpired
 } from "../TypesAndConstants.sol";
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
@@ -36,6 +37,12 @@ contract TMPLSwapperBase is SwapperBase {
         bytes3 codeToDeploy;
 
         if (action == FILL) {
+            // Expiry of a TMPLSwap and cancellation thereof are effectively the same thing, so we only perform this
+            // check in the FILL branch.
+            if (swap.notValidAfter != 0 && block.timestamp > swap.notValidAfter) {
+                revert SwapExpired(swap.notValidAfter);
+            }
+
             codeToDeploy = FILLED_ARTIFACT;
 
             ERC721TransferLib._transfer(swap.offer, _asNonPayableParties(swap.parties));

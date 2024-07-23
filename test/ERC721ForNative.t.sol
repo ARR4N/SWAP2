@@ -26,7 +26,8 @@ contract ERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
         return ERC721ForNativeSwap({
             parties: _asPayableParties(t.base.parties),
             offer: ERC721TransferLib.ERC721Token({addr: token, id: t.tokenId}),
-            consideration: t.base.consideration()
+            consideration: t.base.consideration(),
+            notValidAfter: t.base.notValidAfter
         });
     }
 

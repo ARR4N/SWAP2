@@ -185,3 +185,6 @@ error InsufficientBalance(uint256 actual, uint256 expected);
 
 /// @dev Thrown if the platform fee is greater than the threshold in the swap struct.
 error ExcessPlatformFee(uint256 fee, uint256 max);
+
+/// @dev Thrown if the Swap's `notValidAfter` field is non-zero and before the current `block.timestamp`.
+error SwapExpired(uint256 notValidAfter);
