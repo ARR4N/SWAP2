@@ -9,6 +9,16 @@ import {ERC721TransferLib, IERC721} from "../src/ERC721TransferLib.sol";
 import {Parties} from "../src/TypesAndConstants.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+
+contract ERC721Receiver is IERC721Receiver {
+    mapping(uint256 => bytes) public tokenData;
+
+    function onERC721Received(address, address, uint256 tokenId, bytes calldata data) external returns (bytes4) {
+        tokenData[tokenId] = data;
+        return IERC721Receiver.onERC721Received.selector;
+    }
+}
 
 contract ERC721TransferLibTest is Test, ITestEvents {
     using ERC721TransferLib for *;
@@ -23,10 +33,18 @@ contract ERC721TransferLibTest is Test, ITestEvents {
         uint256[NUM_CONTRACTS][TOKENS_PER_CONTRACT] calldata ids,
         Parties memory parties
     ) public {
+        vm.assume(parties.buyer.code.length == 0); // otherwise safeTransferFrom() will fail
+
         ERC721TransferLib.MultiERC721Token[] memory tokens = _testSetup(deploySalts, ids, parties);
 
-        function(ERC721TransferLib.MultiERC721Token[] memory, Parties memory)[3] memory funcs =
-            [_transferBatch, _transferPerContract, _transferIndividually];
+        function(ERC721TransferLib.MultiERC721Token[] memory, Parties memory)[6] memory funcs = [
+            _transferBatch,
+            _safeTransferBatch,
+            _transferPerContract,
+            _safeTransferPerContract,
+            _transferIndividually,
+            _safeTransferIndividually
+        ];
 
         for (uint256 i = 0; i < funcs.length; ++i) {
             uint256 snap = vm.snapshot();
@@ -45,11 +63,40 @@ contract ERC721TransferLibTest is Test, ITestEvents {
         tokens._transfer(parties);
     }
 
+    function _safeTransferBatch(ERC721TransferLib.MultiERC721Token[] memory tokens, Parties memory parties) internal {
+        _safeTransferBatchWithData(tokens, parties, "");
+    }
+
+    /// @dev The `WithData` suffix avoids overloading so the functions can be placed in arrays for test suites.
+    function _safeTransferBatchWithData(
+        ERC721TransferLib.MultiERC721Token[] memory tokens,
+        Parties memory parties,
+        bytes memory data
+    ) internal {
+        tokens._safeTransfer(parties, data);
+    }
+
     function _transferPerContract(ERC721TransferLib.MultiERC721Token[] memory tokens, Parties memory parties)
         internal
     {
         for (uint256 i = 0; i < tokens.length; ++i) {
             tokens[i]._transfer(parties);
+        }
+    }
+
+    function _safeTransferPerContract(ERC721TransferLib.MultiERC721Token[] memory tokens, Parties memory parties)
+        internal
+    {
+        _safeTransferPerContractWithData(tokens, parties, "");
+    }
+
+    function _safeTransferPerContractWithData(
+        ERC721TransferLib.MultiERC721Token[] memory tokens,
+        Parties memory parties,
+        bytes memory data
+    ) internal {
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            tokens[i]._safeTransfer(parties, data);
         }
     }
 
@@ -59,6 +106,24 @@ contract ERC721TransferLibTest is Test, ITestEvents {
         for (uint256 i = 0; i < tokens.length; ++i) {
             for (uint256 j = 0; j < tokens[i].ids.length; ++j) {
                 ERC721TransferLib.ERC721Token({addr: tokens[i].addr, id: tokens[i].ids[j]})._transfer(parties);
+            }
+        }
+    }
+
+    function _safeTransferIndividually(ERC721TransferLib.MultiERC721Token[] memory tokens, Parties memory parties)
+        internal
+    {
+        _safeTransferIndividuallyWithData(tokens, parties, "");
+    }
+
+    function _safeTransferIndividuallyWithData(
+        ERC721TransferLib.MultiERC721Token[] memory tokens,
+        Parties memory parties,
+        bytes memory data
+    ) internal {
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            for (uint256 j = 0; j < tokens[i].ids.length; ++j) {
+                ERC721TransferLib.ERC721Token({addr: tokens[i].addr, id: tokens[i].ids[j]})._safeTransfer(parties, data);
             }
         }
     }
@@ -152,6 +217,40 @@ contract ERC721TransferLibTest is Test, ITestEvents {
         ERC721TransferLib.MultiERC721Token[] memory tokens = new ERC721TransferLib.MultiERC721Token[](1);
         tokens[0].addr = IERC721(tokenContract);
         tokens._transfer(parties);
+    }
+
+    function testSafeTransferDataPropagation(uint256 tokenId, address seller, bytes32 buyerSalt, bytes memory data)
+        external
+    {
+        vm.assume(seller != address(0));
+
+        ERC721Receiver buyer = new ERC721Receiver{salt: buyerSalt}();
+        Parties memory parties = Parties({seller: seller, buyer: address(buyer)});
+
+        Token t = new Token();
+        t.mint(seller, tokenId);
+
+        ERC721TransferLib.MultiERC721Token[] memory tokens = new ERC721TransferLib.MultiERC721Token[](1);
+        tokens[0].addr = IERC721(t);
+        tokens[0].ids = new uint256[](1);
+        tokens[0].ids[0] = tokenId;
+
+        function(ERC721TransferLib.MultiERC721Token[] memory, Parties memory, bytes memory)[3] memory funcs =
+            [_safeTransferBatchWithData, _safeTransferPerContractWithData, _safeTransferIndividuallyWithData];
+
+        for (uint256 i = 0; i < funcs.length; ++i) {
+            uint256 snap = vm.snapshot();
+            _assertOwner(tokens, parties.seller);
+            assertEq(buyer.tokenData(tokenId), "", "safeTransfer() data recorder empty");
+
+            vm.startPrank(parties.seller);
+            funcs[i](tokens, parties, data);
+            vm.stopPrank();
+
+            _assertOwner(tokens, parties.buyer);
+            assertEq(buyer.tokenData(tokenId), data, "safeTransfer() data propagated");
+            vm.revertTo(snap);
+        }
     }
 
     function testErrorPropagation(uint256 tokenId, Parties memory parties) public {
