@@ -12,6 +12,9 @@ import {Parties} from "./TypesAndConstants.sol";
  * exploited by the `TMPL/SwapperBase.sol.tmpl` template.
  */
 library ERC721TransferLib {
+    /// @dev Thrown if a token address doesn't contain any code.
+    error NoCodeAtAddress(address);
+
     /// @dev Represents a single ERC721 token.
     struct ERC721Token {
         IERC721 addr;
@@ -63,6 +66,9 @@ library ERC721TransferLib {
      */
     function _transfer(MultiERC721Token memory token, bytes memory reusableCallData) private {
         address addr = address(token.addr);
+        if (addr.code.length == 0) {
+            revert NoCodeAtAddress(addr);
+        }
         uint256[] memory ids = token.ids;
 
         uint256 idSrc;
