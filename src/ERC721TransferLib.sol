@@ -26,6 +26,11 @@ library ERC721TransferLib {
         token.addr.transferFrom(parties.seller, parties.buyer, token.id);
     }
 
+    /// @dev Transfers the token from `parties.seller` to `parties.buyer` using `safeTransferFrom()`.
+    function _safeTransfer(ERC721Token memory token, Parties memory parties, bytes memory data) internal {
+        token.addr.safeTransferFrom(parties.seller, parties.buyer, token.id, data);
+    }
+
     /// @dev Represents multiple ERC721 tokens within the same contract.
     struct MultiERC721Token {
         IERC721 addr;
@@ -41,12 +46,32 @@ library ERC721TransferLib {
     }
 
     /**
+     * @dev Transfers all tokens from `parties.seller` to `parties.buyer` using `safeTransferFrom()`.
+     * @param tokens Any number of ERC721 tokens from a single contract; ids MUST be distinct across the entire array.
+     */
+    function _safeTransfer(MultiERC721Token memory tokens, Parties memory parties, bytes memory data) internal {
+        _transfer(tokens, _reusableSafeTransferCallData(parties, data));
+    }
+
+    /**
      * @dev Transfers all tokens from `parties.seller` to `parties.buyer`.
      * @param tokens An _array_ of MultiERC721Token structs, representing any number of tokens. {addr,id} pairs MUST be
      * distinct across the entire array.
      */
     function _transfer(MultiERC721Token[] memory tokens, Parties memory parties) internal {
         bytes memory callData = _reusableTransferCallData(parties);
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            _transfer(tokens[i], callData);
+        }
+    }
+
+    /**
+     * @dev Transfers all tokens from `parties.seller` to `parties.buyer` using `safeTransferFrom()`.
+     * @param tokens An _array_ of MultiERC721Token structs, representing any number of tokens. {addr,id} pairs MUST be
+     * distinct across the entire array.
+     */
+    function _safeTransfer(MultiERC721Token[] memory tokens, Parties memory parties, bytes memory data) internal {
+        bytes memory callData = _reusableSafeTransferCallData(parties, data);
         for (uint256 i = 0; i < tokens.length; ++i) {
             _transfer(tokens[i], callData);
         }
@@ -61,8 +86,23 @@ library ERC721TransferLib {
     }
 
     /**
+     * @dev Returns calldata for `ERC721.safeTransferFrom(parties.seller, parties.buyer, 0, data)`. See
+     * `_reusableTransferCallData()` for rationale.
+     */
+    function _reusableSafeTransferCallData(Parties memory parties, bytes memory data)
+        private
+        pure
+        returns (bytes memory)
+    {
+        // Since `safeTransferFrom()` has an overload, we can't use `abi.encodeCall()` as it's ambiguous.
+        return abi.encodeWithSignature(
+            "safeTransferFrom(address,address,uint256,bytes)", parties.seller, parties.buyer, 0, data
+        );
+    }
+
+    /**
      * @param token Contract and IDs of tokens to be transferred.
-     * @param reusableCallData Output of `_reusableTransferCallData()`.
+     * @param reusableCallData Output of `_reusableTransferCallData()` or `_reusableSafeTransferCallData()`.
      */
     function _transfer(MultiERC721Token memory token, bytes memory reusableCallData) private {
         address addr = address(token.addr);
