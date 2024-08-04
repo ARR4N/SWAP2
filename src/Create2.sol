@@ -23,15 +23,15 @@ library Create2 {
         }
 
         assembly ("memory-safe") {
-            let free := mload(0x40)
-
             if iszero(returndatasize()) {
-                mstore(free, 0x33d2bae4) // Create2EmptyRevert()
-                revert(add(free, 28), 4)
+                mstore(0, 0x33d2bae4) // Create2EmptyRevert()
+                revert(28, 4)
             }
 
-            returndatacopy(free, 0, returndatasize())
-            revert(free, returndatasize())
+            // Even though this may extend beyond scratch space, we revert the current context immediately so it's still
+            // memory-safe.
+            returndatacopy(0, 0, returndatasize())
+            revert(0, returndatasize())
         }
     }
 }
