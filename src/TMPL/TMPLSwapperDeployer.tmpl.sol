@@ -31,7 +31,7 @@ contract TMPLSwapperPredictor {
 /// @dev Deployer of TMPLSwapper contracts.
 abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, SwapperDeployerBase, ISwapperEvents {
     /// @dev Execute the `TMPLSwap`, transferring all assets between the parties.
-    function fill(TMPLSwap calldata swap, bytes32 salt) external payable returns (address) {
+    function fillTMPL(TMPLSwap calldata swap, bytes32 salt) external payable returns (address) {
         (address payable feeRecipient, uint16 basisPoints) = _platformFeeConfig();
         address a = _deploy(
             _bytecode(swap, _currentChainId()),
@@ -44,7 +44,7 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
     }
 
     /// @dev Permanently invalidate the `TMPLSwap`.
-    function cancel(TMPLSwap calldata swap, bytes32 salt) external returns (address) {
+    function cancelTMPL(TMPLSwap calldata swap, bytes32 salt) external returns (address) {
         if (msg.sender != swap.parties.seller && msg.sender != swap.parties.buyer) {
             revert OnlyPartyCanCancel();
         }
@@ -57,7 +57,7 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
      * @notice Computes the address of the swapper contract that will be deployed to execute the `TMPLSwap`.
      * @dev Important: see `TMPLSwapperProposer.propose()` as an alternative.
      */
-    function swapper(TMPLSwap calldata swap, bytes32 salt) external view returns (address) {
+    function swapperOfTMPL(TMPLSwap calldata swap, bytes32 salt) external view returns (address) {
         return _swapper(swap, salt, address(this), _currentChainId());
     }
 }
@@ -80,7 +80,7 @@ abstract contract TMPLSwapperProposer is TMPLSwapperPredictor, SwapperProposerBa
      * @dev This function MAY be called on a different chain to the one on which the swap will occur, provided that the
      * deployer contract has the same address.
      */
-    function propose(TMPLSwap calldata swap) external returns (bytes32, address) {
+    function proposeTMPL(TMPLSwap calldata swap) external returns (bytes32, address) {
         // We use blockhash instead of difficulty to allow this to work on chains other than ETH mainnet. The
         // malleability of block hashes is too low and their rate of production too slow for an attack based on
         // discarding undesirable salts.
