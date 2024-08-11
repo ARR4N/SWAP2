@@ -7,6 +7,7 @@ import {console2} from "forge-std/console2.sol";
 import {SWAP2} from "../src/SWAP2.sol";
 import {Disbursement, Consideration, ERC20Consideration} from "../src/ConsiderationLib.sol";
 import {Escrow, IEscrowEvents} from "../src/Escrow.sol";
+import {ISwapperDeployerEvents} from "../src/SwapperDeployerBase.sol";
 import {Parties, PayableParties, ISwapperEvents, SwapStatus} from "../src/TypesAndConstants.sol";
 
 import {ERC721, IERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -48,7 +49,7 @@ contract Token is ERC721 {
     }
 }
 
-interface ITestEvents is ISwapperEvents, IEscrowEvents {
+interface ITestEvents is ISwapperEvents, IEscrowEvents, ISwapperDeployerEvents {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 }
 
@@ -124,6 +125,8 @@ abstract contract SwapperTestBase is Test, ITestEvents {
 
     /// @dev Sets the platform-fee config to the parameters provided in the test case.
     function _setPlatformFee(TestCase memory t) internal {
+        vm.expectEmit(true, true, true, true, address(factory));
+        emit PlatformFeeChanged(t.platformFeeRecipient, t.platformFeeBasisPoints);
         vm.prank(factory.owner());
         factory.setPlatformFee(t.platformFeeRecipient, t.platformFeeBasisPoints);
     }
