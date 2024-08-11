@@ -166,6 +166,15 @@ function swapStatus(address swapper) view returns (SwapStatus) {
     return SwapStatus.Invalid;
 }
 
+// The current chain ID is effectively a constant so it belongs in this file.
+
+/// @return id The current chain ID.
+function currentChainId() view returns (uint256 id) {
+    assembly ("memory-safe") {
+        id := chainid()
+    }
+}
+
 /**
  * ======
  *

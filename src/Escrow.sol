@@ -9,6 +9,10 @@ interface IEscrowEvents {
     event Withdrawal(address, uint256);
 }
 
+/// @dev MUST be returned by `Escrow.isEscrow()`.
+bytes32 constant ESCROW_MAGIC_NUMBER =
+    keccak256("Trust me, bro, I'll protect your ETH. But not ERC20s, don't send me ERC20s!");
+
 /// @dev Minimal interface required for depositing funds in an escrow.
 interface IEscrow {
     function deposit(address payable) external payable;
@@ -46,5 +50,10 @@ contract Escrow is IEscrow, IEscrowEvents {
         Address.sendValue(payable(account), bal);
 
         emit Withdrawal(account, bal);
+    }
+
+    /// @dev Returns `ESCROW_MAGIC_NUMBER`.
+    function isEscrow() external pure returns (bytes32) {
+        return ESCROW_MAGIC_NUMBER;
     }
 }

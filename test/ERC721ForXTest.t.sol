@@ -328,9 +328,17 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         {
             uint256 expectedBuyerBalance = _balance(test.buyer()) + _balance(swapper);
 
+            if (!_isERC20Test() && _balance(swapper) > 0) {
+                vm.expectEmit(true, true, true, true, address(factory.escrow()));
+                emit Deposit(test.buyer(), _balance(swapper));
+            }
             vm.expectEmit(true, true, true, true, address(factory));
             emit Cancelled(_swapper(t));
             _cancelAs(t, asSeller ? test.seller() : test.buyer());
+
+            if (factory.escrow().balance(test.buyer()) > 0) {
+                factory.escrow().withdraw(test.buyer());
+            }
 
             assertEq(_balance(swapper), 0, "swapper balance zero after cancel");
             assertEq(_balance(test.buyer()), expectedBuyerBalance, "buyer balance after cancel");
@@ -409,7 +417,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         );
     }
 
-    function testGriefNativeTokenInvariant(ERC721TestCase memory t, uint8 vandalIndex)
+    function testGriefNativeTokenInvariantOnFill(ERC721TestCase memory t, uint8 vandalIndex)
         external
         assumeValidTest(
             t.base,
@@ -439,6 +447,25 @@ abstract contract ERC721ForXTest is SwapperTestBase {
             _expectedSellerBalanceAfterFill(t.base) + vandal.amount,
             "seller receives excess amount sent to contract"
         );
+    }
+
+    function testGriefNativeTokenInvariantOnCancel(ERC721TestCase memory t)
+        external
+        assumeValidTest(
+            t.base,
+            Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true, expired: false})
+        )
+    {
+        vm.skip(_isERC20Test());
+
+        // If the buyer sends any funds back during cancellation, the post-execution invariant of zero balance will be
+        // broken.
+        t.base.parties.buyer = address(new FundsReflector());
+        address swapper = _beforeExecute(t);
+
+        vm.expectEmit(true, true, true, true, address(factory));
+        emit Cancelled(swapper);
+        _cancelAs(t, t.base.seller());
     }
 
     /**
@@ -531,6 +558,32 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
         vm.expectRevert(abi.encodeWithSelector(Escrow.ZeroBalance.selector, address(buyer)));
         escrow.withdraw(test.buyer());
+    }
+
+    function testChainIdCoupling(ERC721TestCase memory t, uint64 chainId0, uint64 chainId1)
+        external
+        // While the specific assumptions are irrelevant, general assumptions about `t` must be made for it to be valid
+        // otherwise we'll get out-of-bounds errors.
+        assumeValidTest(
+            t.base,
+            Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true, expired: false})
+        )
+    {
+        vm.chainId(chainId0);
+        address swapperOnChain0 = _swapper(t);
+
+        vm.chainId(chainId1);
+        address swapperOnChain1 = _swapper(t);
+
+        emit log_named_uint("chain ID 0", chainId0);
+        emit log_named_uint("chain ID 1", chainId1);
+        emit log_named_address("swapper on chain 0", swapperOnChain0);
+        emit log_named_address("swapper on chain 1", swapperOnChain1);
+        assertEq(
+            chainId0 == chainId1,
+            swapperOnChain0 == swapperOnChain1,
+            "different chain IDs <=> different swapper addresses"
+        );
     }
 
     function testGas() external {

@@ -19,7 +19,7 @@ import {
     MultiERC721ForERC20SwapperProposer
 } from "./MultiERC721ForERC20/MultiERC721ForERC20SwapperDeployer.gen.sol";
 
-import {Escrow, IEscrow} from "./Escrow.sol";
+import {Escrow, IEscrow, ESCROW_MAGIC_NUMBER} from "./Escrow.sol";
 import {SwapperDeployerBase} from "./SwapperDeployerBase.sol";
 
 import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
@@ -31,6 +31,9 @@ contract SWAP2Deployer is
     MultiERC721ForNativeSwapperDeployer,
     MultiERC721ForERC20SwapperDeployer
 {
+    /// @dev Thrown if constructor `Escrow` argument is invalid; either address(0) or fails the magic-number test.
+    error InvalidEscrowContract(address);
+
     /// @notice Escrow contract used in case of failed push payments.
     Escrow public immutable escrow;
 
@@ -41,7 +44,12 @@ contract SWAP2Deployer is
     constructor(address initialOwner, Escrow escrow_, address payable feeRecipient, uint16 feeBasisPoints)
         Ownable(initialOwner)
     {
+        address escrowA = address(escrow_);
+        if (escrowA == address(0) || escrowA.code.length == 0 || escrow_.isEscrow() != ESCROW_MAGIC_NUMBER) {
+            revert InvalidEscrowContract(escrowA);
+        }
         escrow = escrow_;
+
         _setPlatformFee(feeRecipient, feeBasisPoints);
     }
 
@@ -68,6 +76,7 @@ contract SWAP2Deployer is
 
     function _setPlatformFee(address payable recipient, uint16 basisPoints) private {
         feeConfig = PlatformFeeConfig({recipient: recipient, basisPoints: basisPoints});
+        emit PlatformFeeChanged(recipient, basisPoints);
     }
 
     /**
@@ -92,30 +101,37 @@ abstract contract SWAP2ProposerBase is
     MultiERC721ForERC20SwapperProposer
 {}
 
-/// @notice A standalone SWAP2 proposer for an immutable deployer address.
+/// @notice A standalone SWAP2 proposer for an immutable deployer address and chain ID.
 contract SWAP2Proposer is SWAP2ProposerBase {
     /// @notice The SWAP2Deployer for which this contract proposes swaps.
     address public immutable deployer;
 
-    /// @param deployer_ Address of the SWAP2Deployer for which this contract proposes swaps.
-    constructor(address deployer_) {
+    /// @notice The chain on which proposed swaps will be executed.
+    uint256 public immutable chainId;
+
+    /**
+     * @param deployer_ Address of the SWAP2Deployer for which this contract proposes swaps.
+     * @param chainId_ Chain on which proposed swaps will be executed.
+     */
+    constructor(address deployer_, uint256 chainId_) {
         deployer = deployer_;
+        chainId = chainId_;
     }
 
     /// @dev The immutable `deployer` is the swapper deployer for all types.
-    function _swapperDeployer() internal view override returns (address) {
-        return deployer;
+    function _swapperDeployer() internal view override returns (address, uint256) {
+        return (deployer, chainId);
     }
 }
 
 /// @notice A combined SWAP2{Deployer,Proposer}.
 contract SWAP2 is SWAP2Deployer, SWAP2ProposerBase {
-    constructor(address initialOwner, Escrow escrow, address payable feeRecipient, uint16 feeBasisPoints)
-        SWAP2Deployer(initialOwner, escrow, feeRecipient, feeBasisPoints)
+    constructor(address initialOwner, Escrow escrow_, address payable feeRecipient, uint16 feeBasisPoints)
+        SWAP2Deployer(initialOwner, escrow_, feeRecipient, feeBasisPoints)
     {}
 
     /// @dev The current contract is the swapper deployer for all types.
-    function _swapperDeployer() internal view override returns (address) {
-        return address(this);
+    function _swapperDeployer() internal view override returns (address, uint256) {
+        return (address(this), _currentChainId());
     }
 }

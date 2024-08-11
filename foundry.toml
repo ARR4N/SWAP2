@@ -10,6 +10,9 @@ optimize_runs = 20_000_000
 
 bytecode_hash = "none"
 
-# via_ir = true
+via_ir = false
+
+[profile.deploy] # See script/DeploymentBase.sol
+via_ir = true
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

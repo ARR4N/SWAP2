@@ -93,16 +93,10 @@ library ConsiderationLib {
      */
     function _cancel(Consideration memory, PayableParties memory parties, IEscrow escrow) internal {
         // MUST remain as the last step for the same reason as _disburseFunds().
-        _sendOrEscrow(parties.buyer, address(this).balance, escrow);
-    }
-
-    function _sendOrEscrow(address payable to, uint256 amount, IEscrow escrow) internal {
-        // 20k for a fresh SSTORE and an arbitrary 10k overhead
-        (bool success,) = to.call{value: amount, gas: 30_000}("");
-        if (success) {
-            return;
+        uint256 bal = address(this).balance;
+        if (bal > 0) {
+            escrow.deposit{value: bal}(parties.buyer);
         }
-        escrow.deposit{value: amount}(to);
     }
 
     /// @dev Returns whether the contract's remaining balance is zero.
