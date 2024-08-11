@@ -15,12 +15,16 @@ import {OnlyPartyCanCancel, ActionMessageLib, CANCEL_MSG, ISwapperEvents} from "
 
 /// @dev Predictor of TMPLSwapper contract addresses.
 contract TMPLSwapperPredictor {
-    function _swapper(TMPLSwap calldata swap, bytes32 salt, address deployer) internal pure returns (address) {
-        return ETPredictor.deploymentAddress(_bytecode(swap), salt, deployer);
+    function _swapper(TMPLSwap calldata swap, bytes32 salt, address deployer, uint256 chainId)
+        internal
+        pure
+        returns (address)
+    {
+        return ETPredictor.deploymentAddress(_bytecode(swap, chainId), salt, deployer);
     }
 
-    function _bytecode(TMPLSwap calldata swap) internal pure returns (bytes memory) {
-        return abi.encodePacked(type(TMPLSwapper).creationCode, abi.encode(swap));
+    function _bytecode(TMPLSwap calldata swap, uint256 chainId) internal pure returns (bytes memory) {
+        return abi.encodePacked(type(TMPLSwapper).creationCode, abi.encode(swap, chainId));
     }
 }
 
@@ -29,8 +33,12 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
     /// @dev Execute the `TMPLSwap`, transferring all assets between the parties.
     function fillTMPL(TMPLSwap calldata swap, bytes32 salt) external payable returns (address) {
         (address payable feeRecipient, uint16 basisPoints) = _platformFeeConfig();
-        address a =
-            _deploy(_bytecode(swap), msg.value, salt, ActionMessageLib.fillWithFeeConfig(feeRecipient, basisPoints));
+        address a = _deploy(
+            _bytecode(swap, _currentChainId()),
+            msg.value,
+            salt,
+            ActionMessageLib.fillWithFeeConfig(feeRecipient, basisPoints)
+        );
         emit Filled(a);
         return a;
     }
@@ -40,7 +48,7 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
         if (msg.sender != swap.parties.seller && msg.sender != swap.parties.buyer) {
             revert OnlyPartyCanCancel();
         }
-        address a = _deploy(_bytecode(swap), 0, salt, ActionMessageLib.cancelWithEscrow(_escrow()));
+        address a = _deploy(_bytecode(swap, _currentChainId()), 0, salt, ActionMessageLib.cancelWithEscrow(_escrow()));
         emit Cancelled(a);
         return a;
     }
@@ -50,7 +58,7 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
      * @dev Important: see `TMPLSwapperProposer.propose()` as an alternative.
      */
     function swapperOfTMPL(TMPLSwap calldata swap, bytes32 salt) external view returns (address) {
-        return _swapper(swap, salt, address(this));
+        return _swapper(swap, salt, address(this), _currentChainId());
     }
 }
 
@@ -77,12 +85,13 @@ abstract contract TMPLSwapperProposer is TMPLSwapperPredictor, SwapperProposerBa
         // malleability of block hashes is too low and their rate of production too slow for an attack based on
         // discarding undesirable salts.
         bytes32 salt = blockhash(block.number - 1);
-        address swapper_ = _swapper(swap, salt, _swapperDeployer(swap));
+        (address deployer, uint256 chainId) = _swapperDeployer();
+        address swapper_ = _swapper(swap, salt, deployer, chainId);
         emit Proposal(swapper_, swap.parties.seller, swap.parties.buyer, swap, salt);
         return (salt, swapper_);
     }
 
-    function _swapperDeployer(TMPLSwap calldata) internal virtual returns (address) {
+    function _swapperDeployer(TMPLSwap calldata) internal virtual returns (address, uint256 chainId) {
         return _swapperDeployer();
     }
 }
@@ -94,5 +103,5 @@ abstract contract TMPLSwapperProposer is TMPLSwapperPredictor, SwapperProposerBa
 function _enforceTMPLSwapperCtorSig() {
     assert(false);
     TMPLSwap memory s;
-    new TMPLSwapper(s);
+    new TMPLSwapper(s, uint256(0));
 }

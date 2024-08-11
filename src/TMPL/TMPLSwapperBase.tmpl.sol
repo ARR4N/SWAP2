@@ -19,7 +19,8 @@ import {
     CANCEL,
     FILLED_ARTIFACT,
     CANCELLED_ARTIFACT,
-    ExcessPlatformFee
+    ExcessPlatformFee,
+    currentChainId
 } from "../TypesAndConstants.sol";
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
@@ -29,7 +30,12 @@ contract TMPLSwapperBase is SwapperBase {
     using ActionMessageLib for Message;
     using ConsiderationLib for *;
 
-    constructor(TMPLSwap memory swap) {
+    constructor(TMPLSwap memory swap, uint256 currentChainId_) {
+        // The TMPLSwapperDeployer always uses its current chain ID, so this is an invariant, and hence the use of
+        // assert. Inclusion of the `currentChainId_` argument is purely to couple the CREATE2 address of this contract
+        // to the specific chain.
+        assert(currentChainId() == currentChainId_);
+
         Message message = IETHome(msg.sender).etMessage();
         Action action = message.action();
 

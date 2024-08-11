@@ -10,5 +10,5 @@ import {TMPLSwapperBase} from "./TMPLSwapperBase.tmpl.sol";
 
 /// @notice Executes the TMPLSwap received in the constructor.
 contract TMPLSwapper is TMPLSwapperBase {
-    constructor(TMPLSwap memory swap) TMPLSwapperBase(swap) {}
+    constructor(TMPLSwap memory swap, uint256 currentChainId) TMPLSwapperBase(swap, currentChainId) {}
 }
