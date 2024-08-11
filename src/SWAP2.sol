@@ -19,7 +19,7 @@ import {
     MultiERC721ForERC20SwapperProposer
 } from "./MultiERC721ForERC20/MultiERC721ForERC20SwapperDeployer.gen.sol";
 
-import {Escrow, IEscrow} from "./Escrow.sol";
+import {Escrow, IEscrow, ESCROW_MAGIC_NUMBER} from "./Escrow.sol";
 import {SwapperDeployerBase} from "./SwapperDeployerBase.sol";
 
 import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
@@ -31,6 +31,9 @@ contract SWAP2Deployer is
     MultiERC721ForNativeSwapperDeployer,
     MultiERC721ForERC20SwapperDeployer
 {
+    /// @dev Thrown if constructor `Escrow` argument is invalid; either address(0) or fails the magic-number test.
+    error InvalidEscrowContract(address);
+
     /// @notice Escrow contract used in case of failed push payments.
     Escrow public immutable escrow;
 
@@ -41,7 +44,12 @@ contract SWAP2Deployer is
     constructor(address initialOwner, Escrow escrow_, address payable feeRecipient, uint16 feeBasisPoints)
         Ownable(initialOwner)
     {
+        address escrowA = address(escrow_);
+        if (escrowA == address(0) || escrowA.code.length == 0 || escrow_.isEscrow() != ESCROW_MAGIC_NUMBER) {
+            revert InvalidEscrowContract(escrowA);
+        }
         escrow = escrow_;
+
         _setPlatformFee(feeRecipient, feeBasisPoints);
     }
 
@@ -110,8 +118,8 @@ contract SWAP2Proposer is SWAP2ProposerBase {
 
 /// @notice A combined SWAP2{Deployer,Proposer}.
 contract SWAP2 is SWAP2Deployer, SWAP2ProposerBase {
-    constructor(address initialOwner, Escrow escrow, address payable feeRecipient, uint16 feeBasisPoints)
-        SWAP2Deployer(initialOwner, escrow, feeRecipient, feeBasisPoints)
+    constructor(address initialOwner, Escrow escrow_, address payable feeRecipient, uint16 feeBasisPoints)
+        SWAP2Deployer(initialOwner, escrow_, feeRecipient, feeBasisPoints)
     {}
 
     /// @dev The current contract is the swapper deployer for all types.
