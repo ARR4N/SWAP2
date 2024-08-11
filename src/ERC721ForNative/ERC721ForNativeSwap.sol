@@ -9,4 +9,5 @@ struct ERC721ForNativeSwap {
     PayableParties parties;
     ERC721TransferLib.ERC721Token offer;
     Consideration consideration;
+    uint256 validUntilTime;
 }

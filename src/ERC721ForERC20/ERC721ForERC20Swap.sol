@@ -9,4 +9,5 @@ struct ERC721ForERC20Swap {
     Parties parties;
     ERC721TransferLib.ERC721Token offer;
     ERC20Consideration consideration;
+    uint256 validUntilTime;
 }

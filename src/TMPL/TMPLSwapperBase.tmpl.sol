@@ -20,6 +20,7 @@ import {
     FILLED_ARTIFACT,
     CANCELLED_ARTIFACT,
     ExcessPlatformFee,
+    SwapExpired,
     currentChainId
 } from "../TypesAndConstants.sol";
 
@@ -42,6 +43,13 @@ contract TMPLSwapperBase is SwapperBase {
         bytes3 codeToDeploy;
 
         if (action == FILL) {
+            // Expiry of a TMPLSwap and cancellation thereof are effectively the same thing, so we only perform this
+            // check in the FILL branch.
+            uint256 validUntil = swap.validUntilTime;
+            if (validUntil != 0 && block.timestamp > swap.validUntilTime) {
+                revert SwapExpired(swap.validUntilTime);
+            }
+
             codeToDeploy = FILLED_ARTIFACT;
 
             ERC721TransferLib._transfer(swap.offer, _asNonPayableParties(swap.parties));

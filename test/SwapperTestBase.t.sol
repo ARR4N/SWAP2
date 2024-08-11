@@ -115,6 +115,8 @@ abstract contract SwapperTestBase is Test, ITestEvents {
         uint256 _maxPlatformFee;
         // Pre-execution config
         uint8 _approval; // use SwapperTestLib.approval() to access as an Approval enum.
+        uint256 warpToTimestamp;
+        uint256 validUntilTime;
         // Tx execution
         address caller;
         bytes32 salt;
@@ -179,6 +181,7 @@ abstract contract SwapperTestBase is Test, ITestEvents {
         bool sufficientPayment; // payment tendered is at least as much as that required by `Consideration`
         bool validPlatformFee; // platform fee is no more than `Consideration.maxPlatformFee`
         bool approving; // either `ERC721.approve()` or `ERC721.setApprovalForAll()` will be called
+        bool expired;
     }
 
     /**
@@ -234,6 +237,22 @@ abstract contract SwapperTestBase is Test, ITestEvents {
             }
         }
 
+        {
+            bool expired = _expired(t);
+            if (expired != assumptions.expired) {
+                if (expired) {
+                    t.warpToTimestamp = bound(t.warpToTimestamp, 0, t.validUntilTime);
+                } else {
+                    // !expired
+                    vm.assume(t.warpToTimestamp >= 1);
+                    t.validUntilTime = bound(t.validUntilTime, 0, t.warpToTimestamp - 1);
+                }
+            }
+            // Although this should always be true, the switching logic is too complex for a test so we must confirm
+            // that it worked.
+            vm.assume(_expired(t) == assumptions.expired);
+        }
+
         vm.assume(_paymentsValid(t));
         vm.assume(_sufficientPayment(t) == assumptions.sufficientPayment);
         vm.assume((t.platformFee() <= t._maxPlatformFee) == assumptions.validPlatformFee);
@@ -242,6 +261,10 @@ abstract contract SwapperTestBase is Test, ITestEvents {
         _;
 
         _clearSeenAddresses();
+    }
+
+    function _expired(TestCase memory t) internal pure returns (bool) {
+        return t.validUntilTime != 0 && t.warpToTimestamp > t.validUntilTime;
     }
 
     uint256[] private _seenAddresses;

@@ -31,7 +31,8 @@ contract ERC721ForERC20Test is ERC721ForXTest, ERC20Test {
         return ERC721ForERC20Swap({
             parties: t.base.parties,
             offer: ERC721TransferLib.ERC721Token({addr: token, id: t.tokenId}),
-            consideration: t.base.erc20Consideration(currency)
+            consideration: t.base.erc20Consideration(currency),
+            validUntilTime: t.base.validUntilTime
         });
     }
 
