@@ -45,12 +45,12 @@ contract MultiERC721ForERC20Test is ERC721ForXTest, ERC20Test {
 
     /// @inheritdoc ERC721ForXTest
     function _swapper(ERC721TestCase memory t) internal view override returns (address) {
-        return factory.swapper(_asSwap(t), t.base.salt);
+        return factory.swapperOfMultiERC721ForERC20(_asSwap(t), t.base.salt);
     }
 
     /// @inheritdoc ERC721ForXTest
     function _propose(ERC721TestCase memory t) internal override returns (bytes32 salt, address swapper) {
-        return factory.propose(_asSwap(t));
+        return factory.proposeMultiERC721ForERC20(_asSwap(t));
     }
 
     /// @inheritdoc ERC721ForXTest
@@ -60,22 +60,22 @@ contract MultiERC721ForERC20Test is ERC721ForXTest, ERC20Test {
 
     /// @inheritdoc ERC721ForXTest
     function _fillSelector() internal pure override returns (bytes4) {
-        return MultiERC721ForERC20SwapperDeployer.fill.selector;
+        return MultiERC721ForERC20SwapperDeployer.fillMultiERC721ForERC20.selector;
     }
 
     /// @inheritdoc ERC721ForXTest
     function _cancelSelector() internal pure override returns (bytes4) {
-        return MultiERC721ForERC20SwapperDeployer.cancel.selector;
+        return MultiERC721ForERC20SwapperDeployer.cancelMultiERC721ForERC20.selector;
     }
 
     /// @inheritdoc ERC721ForXTest
     function _fill(ERC721TestCase memory t) internal override {
-        factory.fill(_asSwap(t), t.base.salt);
+        factory.fillMultiERC721ForERC20(_asSwap(t), t.base.salt);
     }
 
     /// @inheritdoc ERC721ForXTest
     function _cancel(ERC721TestCase memory t) internal override {
-        factory.cancel(_asSwap(t), t.base.salt);
+        factory.cancelMultiERC721ForERC20(_asSwap(t), t.base.salt);
     }
 
     /// @inheritdoc ERC721ForXTest
