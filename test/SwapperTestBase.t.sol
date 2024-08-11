@@ -264,7 +264,7 @@ abstract contract SwapperTestBase is Test, ITestEvents {
     }
 
     function _expired(TestCase memory t) internal pure returns (bool) {
-        return t.warpToTimestamp > t.validUntilTime;
+        return t.validUntilTime != 0 && t.warpToTimestamp > t.validUntilTime;
     }
 
     uint256[] private _seenAddresses;

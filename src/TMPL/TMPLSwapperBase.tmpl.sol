@@ -45,7 +45,8 @@ contract TMPLSwapperBase is SwapperBase {
         if (action == FILL) {
             // Expiry of a TMPLSwap and cancellation thereof are effectively the same thing, so we only perform this
             // check in the FILL branch.
-            if (block.timestamp > swap.validUntilTime) {
+            uint256 validUntil = swap.validUntilTime;
+            if (validUntil != 0 && block.timestamp > swap.validUntilTime) {
                 revert SwapExpired(swap.validUntilTime);
             }
 
