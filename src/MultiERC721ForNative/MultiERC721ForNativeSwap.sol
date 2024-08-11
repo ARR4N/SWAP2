@@ -9,5 +9,5 @@ struct MultiERC721ForNativeSwap {
     PayableParties parties;
     ERC721TransferLib.MultiERC721Token[] offer;
     Consideration consideration;
-    uint256 notValidAfter;
+    uint256 validUntilTime;
 }

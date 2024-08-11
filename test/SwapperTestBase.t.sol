@@ -116,7 +116,7 @@ abstract contract SwapperTestBase is Test, ITestEvents {
         // Pre-execution config
         uint8 _approval; // use SwapperTestLib.approval() to access as an Approval enum.
         uint256 warpToTimestamp;
-        uint256 notValidAfter;
+        uint256 validUntilTime;
         // Tx execution
         address caller;
         bytes32 salt;
@@ -241,11 +241,11 @@ abstract contract SwapperTestBase is Test, ITestEvents {
             bool expired = _expired(t);
             if (expired != assumptions.expired) {
                 if (expired) {
-                    t.warpToTimestamp = bound(t.warpToTimestamp, 0, t.notValidAfter);
+                    t.warpToTimestamp = bound(t.warpToTimestamp, 0, t.validUntilTime);
                 } else {
                     // !expired
                     vm.assume(t.warpToTimestamp >= 1);
-                    t.notValidAfter = bound(t.notValidAfter, 0, t.warpToTimestamp - 1);
+                    t.validUntilTime = bound(t.validUntilTime, 0, t.warpToTimestamp - 1);
                 }
             }
             // Although this should always be true, the switching logic is too complex for a test so we must confirm
@@ -264,7 +264,7 @@ abstract contract SwapperTestBase is Test, ITestEvents {
     }
 
     function _expired(TestCase memory t) internal pure returns (bool) {
-        return t.warpToTimestamp > t.notValidAfter;
+        return t.warpToTimestamp > t.validUntilTime;
     }
 
     uint256[] private _seenAddresses;

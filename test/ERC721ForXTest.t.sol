@@ -216,7 +216,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
             Assumptions({sufficientPayment: true, validPlatformFee: true, approving: true, expired: true})
         )
     {
-        bytes memory err = abi.encodeWithSelector(SwapExpired.selector, t.base.notValidAfter);
+        bytes memory err = abi.encodeWithSelector(SwapExpired.selector, t.base.validUntilTime);
         _testFill(t, err);
     }
 
@@ -605,7 +605,7 @@ abstract contract ERC721ForXTest is SwapperTestBase {
                     platformFeeRecipient: payable(fees),
                     _approval: uint8(Approval.Approve),
                     warpToTimestamp: block.timestamp,
-                    notValidAfter: block.timestamp,
+                    validUntilTime: block.timestamp,
                     caller: makeAddr("buyer"),
                     salt: keccak256("pepper"),
                     native: NativePayments({prePay: 0, callValue: total, postPay: 0}),

@@ -9,5 +9,5 @@ struct TMPLSwap {
     Parties parties; // MUST be substituted for PayableParties for native-token consideration
     ERC721TransferLib.ERC721Token offer; // Can be substituted for any type for which ERC721TransferLib has a corresponding _transfer() function.
     ERC20Consideration consideration;
-    uint256 notValidAfter;
+    uint256 validUntilTime;
 }

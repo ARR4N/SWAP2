@@ -32,7 +32,7 @@ contract ERC721ForERC20Test is ERC721ForXTest, ERC20Test {
             parties: t.base.parties,
             offer: ERC721TransferLib.ERC721Token({addr: token, id: t.tokenId}),
             consideration: t.base.erc20Consideration(currency),
-            notValidAfter: t.base.notValidAfter
+            validUntilTime: t.base.validUntilTime
         });
     }
 

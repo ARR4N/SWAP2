@@ -36,7 +36,7 @@ contract MultiERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
             parties: _asPayableParties(t.base.parties),
             offer: offer,
             consideration: t.base.consideration(),
-            notValidAfter: t.base.notValidAfter
+            validUntilTime: t.base.validUntilTime
         });
     }
 

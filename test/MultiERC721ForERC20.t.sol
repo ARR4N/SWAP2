@@ -40,7 +40,7 @@ contract MultiERC721ForERC20Test is ERC721ForXTest, ERC20Test {
             parties: t.base.parties,
             offer: offer,
             consideration: t.base.erc20Consideration(currency),
-            notValidAfter: t.base.notValidAfter
+            validUntilTime: t.base.validUntilTime
         });
     }
 
