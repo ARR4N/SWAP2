@@ -95,7 +95,7 @@ library ConsiderationLib {
         // MUST remain as the last step for the same reason as _disburseFunds().
         uint256 bal = address(this).balance;
         if (bal > 0) {
-            escrow.deposit{value: address(this).balance}(parties.buyer);
+            escrow.deposit{value: bal}(parties.buyer);
         }
     }
 
