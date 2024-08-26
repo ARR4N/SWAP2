@@ -9,8 +9,10 @@ import {NativeTokenTest} from "./NativeTokenTest.t.sol";
 
 import {ERC721TransferLib} from "../src/ERC721TransferLib.sol";
 import {MultiERC721ForNativeSwap} from "../src/MultiERC721ForNative/MultiERC721ForNativeSwap.sol";
-import {MultiERC721ForNativeSwapperDeployer} from
-    "../src/MultiERC721ForNative/MultiERC721ForNativeSwapperDeployer.gen.sol";
+import {
+    MultiERC721ForNativeSwapperDeployer,
+    IMultiERC721ForNativeSwapperProposerEvents
+} from "../src/MultiERC721ForNative/MultiERC721ForNativeSwapperDeployer.gen.sol";
 import {InsufficientBalance, Parties} from "../src/TypesAndConstants.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
@@ -19,7 +21,7 @@ import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.s
  * @dev Couples an `ERC721ForXTest` with a `NativeTokenTest` to test swapping of an ERC721 for ERC20 tokens, but using
  * the MultiERC721 swapper.
  */
-contract MultiERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
+contract MultiERC721ForNativeTest is IMultiERC721ForNativeSwapperProposerEvents, ERC721ForXTest, NativeTokenTest {
     using SwapperTestLib for TestCase;
 
     /**
@@ -63,6 +65,11 @@ contract MultiERC721ForNativeTest is ERC721ForXTest, NativeTokenTest {
     /// @inheritdoc ERC721ForXTest
     function _cancelSelector() internal pure override returns (bytes4) {
         return MultiERC721ForNativeSwapperDeployer.cancelMultiERC721ForNative.selector;
+    }
+
+    /// @inheritdoc ERC721ForXTest
+    function _proposalEventTopic() internal pure override returns (bytes32) {
+        return MultiERC721ForNativeProposal.selector;
     }
 
     /// @inheritdoc ERC721ForXTest

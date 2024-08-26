@@ -97,6 +97,8 @@ abstract contract ERC721ForXTest is SwapperTestBase {
 
     function _cancelSelector() internal pure virtual returns (bytes4);
 
+    function _proposalEventTopic() internal pure virtual returns (bytes32);
+
     function _callDataToFill(ERC721TestCase memory t) internal view returns (bytes memory) {
         return abi.encodePacked(_fillSelector(), _encodedSwapAndSalt(t, t.base.salt));
     }
@@ -284,6 +286,9 @@ abstract contract ERC721ForXTest is SwapperTestBase {
         {
             Vm.Log[] memory logs = vm.getRecordedLogs();
             assertEq(logs.length, 1, "# logged events");
+            assertEq(
+                logs[0].topics[0], _proposalEventTopic(), "logged topic-0 matches swap-type-specific proposal event"
+            );
             assertEq(logs[0].topics[1], bytes32(abi.encode(swapper)), "logged and returned swapper addresses match");
             assertEq(logs[0].topics[2], bytes32(abi.encode(t.base.seller())), "seller logged");
             assertEq(logs[0].topics[3], bytes32(abi.encode(t.base.buyer())), "buyer logged");

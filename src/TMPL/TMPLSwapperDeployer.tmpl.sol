@@ -62,9 +62,11 @@ abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, Swapp
     }
 }
 
-abstract contract TMPLSwapperProposer is TMPLSwapperPredictor, SwapperProposerBase {
-    event Proposal(address indexed swapper, address indexed seller, address indexed buyer, TMPLSwap, bytes32 salt);
+interface ITMPLSwapperProposerEvents {
+    event TMPLProposal(address indexed swapper, address indexed seller, address indexed buyer, TMPLSwap, bytes32 salt);
+}
 
+abstract contract TMPLSwapperProposer is TMPLSwapperPredictor, ITMPLSwapperProposerEvents, SwapperProposerBase {
     /**
      * @notice "Announces" a propsed swap (in the form of a `Proposal` event), using the last block's hash as the salt
      * for the predicted swapper address.
@@ -87,7 +89,7 @@ abstract contract TMPLSwapperProposer is TMPLSwapperPredictor, SwapperProposerBa
         bytes32 salt = blockhash(block.number - 1);
         (address deployer, uint256 chainId) = _swapperDeployer();
         address swapper_ = _swapper(swap, salt, deployer, chainId);
-        emit Proposal(swapper_, swap.parties.seller, swap.parties.buyer, swap, salt);
+        emit TMPLProposal(swapper_, swap.parties.seller, swap.parties.buyer, swap, salt);
         return (salt, swapper_);
     }
 

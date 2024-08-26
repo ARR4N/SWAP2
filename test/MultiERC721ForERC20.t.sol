@@ -9,7 +9,10 @@ import {ERC20Test} from "./ERC20Test.t.sol";
 
 import {ERC721TransferLib} from "../src/ERC721TransferLib.sol";
 import {MultiERC721ForERC20Swap} from "../src/MultiERC721ForERC20/MultiERC721ForERC20Swap.sol";
-import {MultiERC721ForERC20SwapperDeployer} from "../src/MultiERC721ForERC20/MultiERC721ForERC20SwapperDeployer.gen.sol";
+import {
+    MultiERC721ForERC20SwapperDeployer,
+    IMultiERC721ForERC20SwapperProposerEvents
+} from "../src/MultiERC721ForERC20/MultiERC721ForERC20SwapperDeployer.gen.sol";
 import {InsufficientBalance, Parties} from "../src/TypesAndConstants.sol";
 
 import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
@@ -18,7 +21,7 @@ import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.s
  * @dev Couples an `ERC721ForXTest` with an `ERC20Test` to test swapping of an ERC721 for ERC20 tokens, but using the
  * MultiERC721 swapper.
  */
-contract MultiERC721ForERC20Test is ERC721ForXTest, ERC20Test {
+contract MultiERC721ForERC20Test is IMultiERC721ForERC20SwapperProposerEvents, ERC721ForXTest, ERC20Test {
     using SwapperTestLib for TestCase;
 
     function setUp() public override(SwapperTestBase, ERC20Test) {
@@ -67,6 +70,11 @@ contract MultiERC721ForERC20Test is ERC721ForXTest, ERC20Test {
     /// @inheritdoc ERC721ForXTest
     function _cancelSelector() internal pure override returns (bytes4) {
         return MultiERC721ForERC20SwapperDeployer.cancelMultiERC721ForERC20.selector;
+    }
+
+    /// @inheritdoc ERC721ForXTest
+    function _proposalEventTopic() internal pure override returns (bytes32) {
+        return MultiERC721ForERC20Proposal.selector;
     }
 
     /// @inheritdoc ERC721ForXTest
