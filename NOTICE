@@ -1,0 +1,8 @@
+While all code is made available under the MIT License, the required copyright
+notice differs for some Solidity files. Unless a file states differently, the
+default notice is:
+
+Copyright 2024 Divergence Tech Ltd.
+
+Any file with a different copyright owner has its notice stated explicitly,
+immediately after the SPDX identifier.

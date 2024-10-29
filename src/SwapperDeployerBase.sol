@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright 2024 Divergence Tech Ltd.
+// SPDX-License-Identifier: MIT
+// Copyright 2024 Lomita Digital, Inc.
 pragma solidity 0.8.25;
 
 import {IEscrow} from "./Escrow.sol";
