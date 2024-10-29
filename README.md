@@ -3,6 +3,10 @@
 
 **SWAP2 is a protocol for OTC NFT trading using ephemeral, CREATE2-deployed contracts with minimal gas overhead.**
 
+SWAP2 provides a least-privileges alternative to other trading protocols, circumventing the risks associated with approval-for-all
+trading with single-use but gas-efficient contracts. It was designed and implemented by divergence on behalf of brokerage firm,
+Fountain Digital, and [audited by Spearbit](./audit/SWAP2-Audit_Spearbit.pdf).
+
 ## Navigating the code
 
 1. See [SWAP2 Design](./SWAP2-Design.md) to become familiar with the design and terminology.
