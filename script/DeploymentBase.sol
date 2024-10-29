@@ -13,7 +13,7 @@ contract DeploymentBase is Script {
 
     function setUp() public view virtual {
         string memory profile = vm.envString("FOUNDRY_PROFILE");
-        if (keccak256(abi.encode(profile)) != keccak256("deploy")) {
+        if (keccak256(abi.encodePacked(profile)) != keccak256("deploy")) {
             revert NotDeployProfile(profile);
         }
     }
