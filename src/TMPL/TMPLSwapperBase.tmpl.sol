@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright 2024 Divergence Tech Ltd.
+// Copyright 2024 Lomita Digital, Inc.
 pragma solidity 0.8.25;
 /**
  * GENERATED CODE - DO NOT EDIT
@@ -27,6 +27,7 @@ import {
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 /// @dev Base contract for a TMPLSwapper implementation.
+/// @author Arran Schlosberg (@divergencearran / github.com/arr4n)
 contract TMPLSwapperBase is SwapperBase {
     using ActionMessageLib for Message;
     using ConsiderationLib for *;

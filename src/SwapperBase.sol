@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright 2024 Divergence Tech Ltd.
+// Copyright 2024 Lomita Digital, Inc.
 pragma solidity 0.8.25;
 
 import {Parties, PayableParties} from "./TypesAndConstants.sol";
@@ -8,6 +8,7 @@ import {Parties, PayableParties} from "./TypesAndConstants.sol";
  * @dev Base contract for all <T>Swapper implementations. As implementations are created by simple text substitution
  * from templates, they require function overloading based on <T>Swap struct fields; this contract enables such
  * behaviour, greatly simplifying code generation.
+ * @author Arran Schlosberg (@divergencearran / github.com/arr4n)
  */
 contract SwapperBase {
     /// @dev Converts a `PayableParties` struct into a `Parties`, using the same backing memory.

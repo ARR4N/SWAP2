@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// Copyright 2024 Lomita Digital, Inc.
 pragma solidity 0.8.25;
 
 import {ERC20Consideration} from "../ConsiderationLib.sol";

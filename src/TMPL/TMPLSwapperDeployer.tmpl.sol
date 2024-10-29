@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright 2024 Divergence Tech Ltd.
+// Copyright 2024 Lomita Digital, Inc.
 pragma solidity 0.8.25;
 /**
  * GENERATED CODE - DO NOT EDIT
@@ -14,6 +14,7 @@ import {SwapperProposerBase} from "../SwapperProposerBase.sol";
 import {OnlyPartyCanCancel, ActionMessageLib, CANCEL_MSG, ISwapperEvents} from "../TypesAndConstants.sol";
 
 /// @dev Predictor of TMPLSwapper contract addresses.
+/// @author Arran Schlosberg (@divergencearran / github.com/arr4n)
 contract TMPLSwapperPredictor {
     function _swapper(TMPLSwap calldata swap, bytes32 salt, address deployer, uint256 chainId)
         internal
@@ -29,6 +30,7 @@ contract TMPLSwapperPredictor {
 }
 
 /// @dev Deployer of TMPLSwapper contracts.
+/// @author Arran Schlosberg (@divergencearran / github.com/arr4n)
 abstract contract TMPLSwapperDeployer is TMPLSwapperPredictor, ETDeployer, SwapperDeployerBase, ISwapperEvents {
     /// @dev Execute the `TMPLSwap`, transferring all assets between the parties.
     function fillTMPL(TMPLSwap calldata swap, bytes32 salt) external payable returns (address) {

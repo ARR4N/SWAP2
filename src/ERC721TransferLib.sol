@@ -10,6 +10,7 @@ import {Parties} from "./TypesAndConstants.sol";
  * @dev Note that all `_transfer(<T>, Parties)` functions have effectively the same signature, allowing them to be
  * called without explicit knowledge of the <T> type as the constructor will select the respective function. This is
  * exploited by the `TMPL/SwapperBase.sol.tmpl` template.
+ * @author Arran Schlosberg (@divergencearran / github.com/arr4n)
  */
 library ERC721TransferLib {
     /// @dev Thrown if a token address doesn't contain any code.
