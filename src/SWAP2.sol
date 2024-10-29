@@ -24,6 +24,7 @@ import {SwapperDeployerBase} from "./SwapperDeployerBase.sol";
 
 import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
+/// @author Arran Schlosberg (@divergencearran / github.com/arr4n)
 contract SWAP2Deployer is
     Ownable2Step,
     ERC721ForNativeSwapperDeployer,
@@ -102,6 +103,7 @@ abstract contract SWAP2ProposerBase is
 {}
 
 /// @notice A standalone SWAP2 proposer for an immutable deployer address and chain ID.
+/// @author Arran Schlosberg (@divergencearran / github.com/arr4n)
 contract SWAP2Proposer is SWAP2ProposerBase {
     /// @notice The SWAP2Deployer for which this contract proposes swaps.
     address public immutable deployer;
@@ -125,6 +127,7 @@ contract SWAP2Proposer is SWAP2ProposerBase {
 }
 
 /// @notice A combined SWAP2{Deployer,Proposer}.
+/// @author Arran Schlosberg (@divergencearran / github.com/arr4n)
 contract SWAP2 is SWAP2Deployer, SWAP2ProposerBase {
     constructor(address initialOwner, Escrow escrow_, address payable feeRecipient, uint16 feeBasisPoints)
         SWAP2Deployer(initialOwner, escrow_, feeRecipient, feeBasisPoints)
