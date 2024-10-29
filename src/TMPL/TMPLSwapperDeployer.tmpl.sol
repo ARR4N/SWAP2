@@ -68,6 +68,7 @@ interface ITMPLSwapperProposerEvents {
     event TMPLProposal(address indexed swapper, address indexed seller, address indexed buyer, TMPLSwap, bytes32 salt);
 }
 
+/// @author Arran Schlosberg (@divergencearran / github.com/arr4n)
 abstract contract TMPLSwapperProposer is TMPLSwapperPredictor, ITMPLSwapperProposerEvents, SwapperProposerBase {
     /**
      * @notice "Announces" a propsed swap (in the form of a `Proposal` event), using the last block's hash as the salt
