@@ -7,6 +7,12 @@ SWAP2 provides a least-privileges alternative to other trading protocols, circum
 trading with single-use but gas-efficient contracts. It was designed and implemented by divergence on behalf of brokerage firm,
 Fountain Digital, and [audited by Spearbit](./audit/SWAP2-Audit_Spearbit.pdf).
 
+## Deployment
+
+| Chain    | Address                                                                                                                    |
+| -------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Ethereum | [0x370f21541173e8b773571c135e3b5617d7f38c54](https://etherscan.io/address/0x370f21541173e8b773571c135e3b5617d7f38c54#code) |
+
 ## Navigating the code
 
 1. See [SWAP2 Design](./SWAP2-Design.md) to become familiar with the design and terminology.
